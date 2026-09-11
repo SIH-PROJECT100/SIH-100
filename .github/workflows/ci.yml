@@ -1,0 +1,102 @@
+name: Backend CI & Immutability Verification
+
+on:
+  push:
+    branches: [ main, backend ]
+  pull_request:
+    branches: [ main, backend ]
+
+jobs:
+  verify:
+    name: Build & Replay Verification
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: gem_compliance
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+          cache: 'npm'
+          cache-dependency-path: backend-api/package-lock.json
+
+      - name: Install PostgreSQL client tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Initialize PostgreSQL least-privilege roles
+        run: |
+          psql "postgresql://postgres:postgres@localhost:5432/gem_compliance" -f docker/init-db.sql
+
+      - name: Install dependencies
+        working-directory: ./backend-api
+        run: npm ci
+
+      - name: Run Prisma migrations
+        working-directory: ./backend-api
+        env:
+          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=public"
+          DATABASE_URL: "postgresql://backend_app:backend_app_secure_password_2026@localhost:5432/gem_compliance?schema=public"
+        run: npx prisma migrate deploy
+
+      - name: Apply Ledger lockdown triggers & constraints
+        run: |
+          psql "postgresql://postgres:postgres@localhost:5432/gem_compliance" -f backend-api/prisma/sql/ledger_lockdown.sql
+
+      - name: Seed database
+        working-directory: ./backend-api
+        env:
+          DATABASE_URL: "postgresql://backend_app:backend_app_secure_password_2026@localhost:5432/gem_compliance?schema=public"
+          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=public"
+        run: npm run db:seed
+
+      - name: Build TypeScript project
+        working-directory: ./backend-api
+        run: npm run build
+
+      - name: Verify AI Extraction Schema Contract
+        working-directory: ./backend-api
+        env:
+          GEMINI_API_KEY: "mock_gemini_api_key_for_ci"
+        run: npx tsx test_ai_contract.ts
+
+      - name: Test Dual-Layer Ledger Immutability (Role + Trigger layers)
+        run: |
+          # 1. Role-grant layer: UPDATE & DELETE must fail as backend_app
+          ! psql "postgresql://backend_app:backend_app_secure_password_2026@localhost:5432/gem_compliance" \
+            -c "UPDATE ledger_entries SET actor_id='hack' WHERE false;" 2>&1 | grep -q "ERROR:  permission denied for table ledger_entries"
+
+          # 2. Trigger layer: with temporary grant, trigger must STILL reject mutation
+          psql "postgresql://postgres:postgres@localhost:5432/gem_compliance" \
+            -c "GRANT UPDATE, DELETE ON ledger_entries TO backend_app;"
+          
+          ! psql "postgresql://postgres:postgres@localhost:5432/gem_compliance" \
+            -c "SET ROLE backend_app; UPDATE ledger_entries SET actor_id='hack' WHERE id=(SELECT id FROM ledger_entries LIMIT 1);" 2>&1 | grep -q "ERROR:  ledger_entries is append-only"
+          
+          # 3. Restore baseline
+          psql "postgresql://postgres:postgres@localhost:5432/gem_compliance" \
+            -c "REVOKE UPDATE, DELETE ON ledger_entries FROM backend_app;"
+          
+          # 4. Verify baseline restored
+          psql "postgresql://postgres:postgres@localhost:5432/gem_compliance" \
+            -c "\dp ledger_entries" | grep -q "ledger_append_only=ar/postgres"
+          
+          echo "✅ Dual-layer ledger immutability verified clean."

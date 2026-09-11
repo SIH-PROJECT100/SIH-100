@@ -1,0 +1,44 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: gem_compliance_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: gem_compliance
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/init-db.sql:/docker-entrypoint-initdb.d/01-init-db.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gem_compliance"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend-api
+      dockerfile: Dockerfile
+    container_name: gem_compliance_api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      DATABASE_URL: "postgresql://backend_app:backend_app_secure_password_2026@postgres:5432/gem_compliance?schema=public"
+      DIRECT_URL: "postgresql://postgres:postgres@postgres:5432/gem_compliance?schema=public"
+      JWT_SECRET: "super_secure_jwt_secret_key_for_gem_compliance_2026"
+      GEMINI_API_KEY: "mock_gemini_api_key_for_preflight"
+      CORS_ORIGIN: "http://localhost:5173"
+      DIGILOCKER_MODE: "mock"
+
+volumes:
+  pgdata:

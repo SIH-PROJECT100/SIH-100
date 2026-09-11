@@ -77,7 +77,9 @@ export type UserRole = 'officer' | 'admin' | 'bidder';
 export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
 export type TenderStatus = 'draft' | 'open' | 'evaluation' | 'awarded' | 'closed';
 export type DecisionStatus = 'qualified' | 'disqualified' | 'clarification_requested' | 'pending';
-export type TrustSource = 'digilocker' | 'portal_verified' | 'ai_extracted' | 'simulated';
+// Trust Provenance Enum definitions
+export type TrustSourceKey = 'digilocker' | 'portal_verified' | 'ai_extracted' | 'simulated';
+export type TrustSourceLabel = 'DigiLocker Verified' | 'Portal Verified' | 'AI Extracted' | 'Simulated';
 
 export interface User {
   id: string;
@@ -101,7 +103,10 @@ export interface ComplianceCheck {
   category: 'msme' | 'gst' | 'pan_itr' | 'blacklist' | 'make_in_india';
   title: string;
   status: 'passed' | 'flagged' | 'warning';
-  trustSource: TrustSource;
+  /** Machine-readable key (recommended for programmatic checks & switch statements) */
+  trust_source: TrustSourceKey;
+  /** Human-readable display label (for rendering directly on badge pills) */
+  trustSource: TrustSourceLabel;
   simulated?: boolean;
   confidence?: number;
   summary: string;
