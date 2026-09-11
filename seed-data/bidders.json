@@ -1,0 +1,218 @@
+[
+  {
+    "id": "bidder-001",
+    "tenderId": "tender-001",
+    "companyName": "Rajdhani Tech Solutions Pvt Ltd",
+    "udyamNumber": "UDYAM-DL-01-0012345",
+    "gstin": "07AABCR1234A1Z5",
+    "pan": "AABCR1234A",
+    "overallRisk": "low",
+    "riskScore": 12.5,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered, expires 2027-03", "simulated": false},
+      {"name": "gst", "status": "verified", "trustSource": "Portal Verified", "detail": "GST active, filing regular", "simulated": false},
+      {"name": "pan_itr", "status": "verified", "trustSource": "AI Extracted", "detail": "PAN matches company name", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "Not found in MCA21 or CERSAI blacklist", "simulated": false},
+      {"name": "make_in_india", "status": "verified", "trustSource": "Simulated", "detail": "MII certificate present (simulated)", "simulated": true},
+      {"name": "local_content", "status": "verified", "trustSource": "Simulated", "detail": "Local content declared: 65%", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-002",
+    "tenderId": "tender-001",
+    "companyName": "Sunrise Manufacturing Ltd",
+    "udyamNumber": "UDYAM-MH-02-0098765",
+    "gstin": "27AADCS5432B1Z9",
+    "pan": "AADCS5432B",
+    "overallRisk": "medium",
+    "riskScore": 38.0,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered", "simulated": false},
+      {"name": "gst", "status": "flagged", "trustSource": "Portal Verified", "detail": "GST return pending for Q2 2025", "simulated": false},
+      {"name": "pan_itr", "status": "verified", "trustSource": "AI Extracted", "detail": "PAN verified", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "No blacklist record found", "simulated": false},
+      {"name": "make_in_india", "status": "unverified", "trustSource": "Simulated", "detail": "MII certificate not submitted", "simulated": true},
+      {"name": "local_content", "status": "verified", "trustSource": "Simulated", "detail": "Local content declared: 52%", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-003",
+    "tenderId": "tender-001",
+    "companyName": "Horizon Infrastructure Corp",
+    "udyamNumber": null,
+    "gstin": "09AAACH1234C1Z2",
+    "pan": "AAACH1234C",
+    "overallRisk": "high",
+    "riskScore": 67.0,
+    "checks": [
+      {"name": "udyam", "status": "missing", "trustSource": "Simulated", "detail": "Udyam registration not found", "simulated": true},
+      {"name": "gst", "status": "verified", "trustSource": "Portal Verified", "detail": "GST active", "simulated": false},
+      {"name": "pan_itr", "status": "flagged", "trustSource": "AI Extracted", "detail": "PAN name mismatch with company records", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "No blacklist record found", "simulated": false},
+      {"name": "make_in_india", "status": "unverified", "trustSource": "Simulated", "detail": "No MII certificate provided", "simulated": true},
+      {"name": "local_content", "status": "unverified", "trustSource": "Simulated", "detail": "Local content not declared", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-004",
+    "tenderId": "tender-001",
+    "companyName": "Greenfield Supplies Pvt Ltd",
+    "udyamNumber": "UDYAM-KA-03-0034567",
+    "gstin": "29AABCG5678D1Z3",
+    "pan": "AABCG5678D",
+    "overallRisk": "low",
+    "riskScore": 8.0,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered, valid", "simulated": false},
+      {"name": "gst", "status": "verified", "trustSource": "Portal Verified", "detail": "GST active, filing regular", "simulated": false},
+      {"name": "pan_itr", "status": "verified", "trustSource": "AI Extracted", "detail": "PAN and ITR match", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "Clean record", "simulated": false},
+      {"name": "make_in_india", "status": "verified", "trustSource": "Simulated", "detail": "MII certified (simulated)", "simulated": true},
+      {"name": "local_content", "status": "verified", "trustSource": "Simulated", "detail": "Local content declared: 70%", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-005",
+    "tenderId": "tender-001",
+    "companyName": "Apex Traders & Co",
+    "udyamNumber": "UDYAM-RJ-04-0056789",
+    "gstin": "08AAAAA5678E1Z4",
+    "pan": "AAAAA5678E",
+    "overallRisk": "critical",
+    "riskScore": 85.0,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered", "simulated": false},
+      {"name": "gst", "status": "flagged", "trustSource": "Portal Verified", "detail": "GSTIN suspended by authority", "simulated": false},
+      {"name": "pan_itr", "status": "flagged", "trustSource": "AI Extracted", "detail": "ITR not filed for last 2 years", "simulated": false},
+      {"name": "blacklist", "status": "flagged", "trustSource": "Portal Verified", "detail": "Entity found in MCA21 defaulter list", "simulated": false},
+      {"name": "make_in_india", "status": "unverified", "trustSource": "Simulated", "detail": "No MII certificate", "simulated": true},
+      {"name": "local_content", "status": "unverified", "trustSource": "Simulated", "detail": "Not declared", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-006",
+    "tenderId": "tender-001",
+    "companyName": "Pinnacle Electronics Pvt Ltd",
+    "udyamNumber": "UDYAM-TN-05-0078901",
+    "gstin": "33AABCP7890F1Z6",
+    "pan": "AABCP7890F",
+    "overallRisk": "medium",
+    "riskScore": 42.0,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered", "simulated": false},
+      {"name": "gst", "status": "verified", "trustSource": "Portal Verified", "detail": "GST active", "simulated": false},
+      {"name": "pan_itr", "status": "verified", "trustSource": "AI Extracted", "detail": "PAN verified", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "No blacklist record", "simulated": false},
+      {"name": "make_in_india", "status": "flagged", "trustSource": "Simulated", "detail": "MII certificate expired (simulated)", "simulated": true},
+      {"name": "local_content", "status": "verified", "trustSource": "Simulated", "detail": "Local content declared: 55%", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-007",
+    "tenderId": "tender-002",
+    "companyName": "Nova Systems India Ltd",
+    "udyamNumber": "UDYAM-GJ-06-0090123",
+    "gstin": "24AAACN0123G1Z7",
+    "pan": "AAACN0123G",
+    "overallRisk": "low",
+    "riskScore": 15.0,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered, valid", "simulated": false},
+      {"name": "gst", "status": "verified", "trustSource": "Portal Verified", "detail": "GST active", "simulated": false},
+      {"name": "pan_itr", "status": "verified", "trustSource": "AI Extracted", "detail": "PAN and ITR verified", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "Clean", "simulated": false},
+      {"name": "make_in_india", "status": "verified", "trustSource": "Simulated", "detail": "MII certified (simulated)", "simulated": true},
+      {"name": "local_content", "status": "verified", "trustSource": "Simulated", "detail": "Local content: 60%", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-008",
+    "tenderId": "tender-002",
+    "companyName": "Sterling Goods Enterprises",
+    "udyamNumber": null,
+    "gstin": "06AAACS1234H1Z8",
+    "pan": "AAACS1234H",
+    "overallRisk": "high",
+    "riskScore": 72.0,
+    "checks": [
+      {"name": "udyam", "status": "missing", "trustSource": "Simulated", "detail": "No Udyam registration found", "simulated": true},
+      {"name": "gst", "status": "verified", "trustSource": "Portal Verified", "detail": "GST active", "simulated": false},
+      {"name": "pan_itr", "status": "flagged", "trustSource": "AI Extracted", "detail": "PAN matches but ITR return missing", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "No blacklist record", "simulated": false},
+      {"name": "make_in_india", "status": "unverified", "trustSource": "Simulated", "detail": "Not submitted", "simulated": true},
+      {"name": "local_content", "status": "unverified", "trustSource": "Simulated", "detail": "Not declared", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-009",
+    "tenderId": "tender-002",
+    "companyName": "Metro Constructions Pvt Ltd",
+    "udyamNumber": "UDYAM-WB-07-0112345",
+    "gstin": "19AAACM1234I1Z9",
+    "pan": "AAACM1234I",
+    "overallRisk": "medium",
+    "riskScore": 35.0,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered", "simulated": false},
+      {"name": "gst", "status": "verified", "trustSource": "Portal Verified", "detail": "GST active, all returns filed", "simulated": false},
+      {"name": "pan_itr", "status": "verified", "trustSource": "AI Extracted", "detail": "PAN and ITR match", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "No blacklist record", "simulated": false},
+      {"name": "make_in_india", "status": "flagged", "trustSource": "Simulated", "detail": "MII claimed but certificate not uploaded (simulated)", "simulated": true},
+      {"name": "local_content", "status": "verified", "trustSource": "Simulated", "detail": "Local content declared: 48%", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-010",
+    "tenderId": "tender-002",
+    "companyName": "Kailash Pharma Industries",
+    "udyamNumber": "UDYAM-MP-08-0134567",
+    "gstin": "23AAACK1234J2Z1",
+    "pan": "AAACK1234J",
+    "overallRisk": "low",
+    "riskScore": 5.0,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered", "simulated": false},
+      {"name": "gst", "status": "verified", "trustSource": "Portal Verified", "detail": "GST active", "simulated": false},
+      {"name": "pan_itr", "status": "verified", "trustSource": "AI Extracted", "detail": "PAN and ITR verified", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "Clean record", "simulated": false},
+      {"name": "make_in_india", "status": "verified", "trustSource": "Simulated", "detail": "MII certified (simulated)", "simulated": true},
+      {"name": "local_content", "status": "verified", "trustSource": "Simulated", "detail": "Local content declared: 80%", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-011",
+    "tenderId": "tender-002",
+    "companyName": "Falcon Defense Services Ltd",
+    "udyamNumber": "UDYAM-HR-09-0156789",
+    "gstin": "06AAACF5678K1Z2",
+    "pan": "AAACF5678K",
+    "overallRisk": "high",
+    "riskScore": 65.0,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered", "simulated": false},
+      {"name": "gst", "status": "flagged", "trustSource": "Portal Verified", "detail": "GST cancelled voluntarily", "simulated": false},
+      {"name": "pan_itr", "status": "flagged", "trustSource": "AI Extracted", "detail": "Company name mismatch across documents", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "No blacklist record", "simulated": false},
+      {"name": "make_in_india", "status": "unverified", "trustSource": "Simulated", "detail": "MII not submitted", "simulated": true},
+      {"name": "local_content", "status": "verified", "trustSource": "Simulated", "detail": "Local content declared: 50%", "simulated": true}
+    ]
+  },
+  {
+    "id": "bidder-012",
+    "tenderId": "tender-002",
+    "companyName": "Vistara IT Solutions Pvt Ltd",
+    "udyamNumber": "UDYAM-TS-10-0178901",
+    "gstin": "36AAACV0901L1Z3",
+    "pan": "AAACV0901L",
+    "overallRisk": "low",
+    "riskScore": 10.0,
+    "checks": [
+      {"name": "udyam", "status": "verified", "trustSource": "DigiLocker Verified", "detail": "MSME registered, valid", "simulated": false},
+      {"name": "gst", "status": "verified", "trustSource": "Portal Verified", "detail": "GST active", "simulated": false},
+      {"name": "pan_itr", "status": "verified", "trustSource": "AI Extracted", "detail": "All docs match", "simulated": false},
+      {"name": "blacklist", "status": "clear", "trustSource": "Portal Verified", "detail": "Clean record", "simulated": false},
+      {"name": "make_in_india", "status": "verified", "trustSource": "Simulated", "detail": "MII certified (simulated)", "simulated": true},
+      {"name": "local_content", "status": "verified", "trustSource": "Simulated", "detail": "Local content declared: 72%", "simulated": true}
+    ]
+  }
+]
