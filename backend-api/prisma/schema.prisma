@@ -1,0 +1,119 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+
+enum UserRole {
+  officer
+  admin
+  bidder
+}
+
+enum RiskLevel {
+  low
+  medium
+  high
+  critical
+}
+
+enum TenderStatus {
+  draft
+  open
+  evaluation
+  awarded
+  closed
+}
+
+enum ActorType {
+  system
+  officer
+  admin
+}
+
+enum LedgerActionType {
+  verification_run
+  officer_decision
+  pii_reveal
+  config_change
+  admin_action
+}
+
+// ─── Models ───────────────────────────────────────────────────────────────────
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  role         UserRole
+  name         String
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Tender {
+  id          String       @id @default(uuid())
+  title       String
+  gemTenderId String       @unique @map("gem_tender_id")
+  status      TenderStatus @default(open)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+  bidders     Bidder[]
+
+  @@map("tenders")
+}
+
+model Bidder {
+  id              String    @id @default(uuid())
+  tenderId        String    @map("tender_id")
+  companyName     String    @map("company_name")
+  udyamNumber     String?   @map("udyam_number")
+  gstin           String?
+  pan             String?
+  overallRisk     RiskLevel @map("overall_risk")
+  riskScore       Float     @default(0) @map("risk_score")
+  // ComplianceCheck[] stored as JSONB
+  checks          Json      @default("[]")
+  // OfficerDecision stored as JSONB; nullable until officer acts
+  officerDecision Json?     @map("officer_decision")
+  verifiedAt      DateTime? @map("verified_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  tender        Tender         @relation(fields: [tenderId], references: [id])
+  ledgerEntries LedgerEntry[]
+
+  @@map("bidders")
+}
+
+model LedgerEntry {
+  id         String           @id @default(uuid())
+  bidderId   String           @map("bidder_id")
+  actorType  ActorType        @map("actor_type")
+  actorId    String?          @map("actor_id")
+  action     LedgerActionType
+  detail     Json             @default("{}")
+  createdAt  DateTime         @default(now()) @map("created_at")
+  // Deliberately NO updatedAt — append-only by design
+
+  bidder Bidder @relation(fields: [bidderId], references: [id])
+
+  @@map("ledger_entries")
+}
+
+model RulesConfig {
+  id        String   @id @default(uuid())
+  config    Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedBy String?  @map("updated_by")
+
+  @@map("rules_configs")
+}
