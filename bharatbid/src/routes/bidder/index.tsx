@@ -159,6 +159,7 @@ export default function BidderPortalPage() {
   const [deleteDocTarget, setDeleteDocTarget] = useState<string | null>(null)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [isUploading, setIsUploading] = useState(false)
+  const [reverifyingDocType, setReverifyingDocType] = useState<string | null>(null)
 
   // ─── Data Queries ──────────────────────────────────────────────────────────
   const { data: profile } = useQuery({
@@ -277,6 +278,7 @@ export default function BidderPortalPage() {
     }
 
     setIsUploading(true)
+    setReverifyingDocType(docType)
     const formData = new FormData()
     formData.append('file', file)
     formData.append('docType', docType)
@@ -286,14 +288,18 @@ export default function BidderPortalPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       })
       notify.success('Document uploaded successfully', {
-        description: 'Cryptographic SHA-256 registered. Progressive verification pipeline initiated.',
+        description: 'New file received. Cryptographic verification & AI extraction initiated.',
       })
       refetchDocs()
-      setTimeout(() => refetchDocs(), 600)
-      setTimeout(() => refetchDocs(), 1400)
-      setTimeout(() => refetchDocs(), 2400)
+      setTimeout(() => refetchDocs(), 800)
+      setTimeout(() => refetchDocs(), 1600)
+      setTimeout(() => {
+        refetchDocs()
+        setReverifyingDocType(null)
+      }, 2800)
     } catch (apiErr: any) {
       setUploadError(apiErr?.response?.data?.error?.message || apiErr.message)
+      setReverifyingDocType(null)
     } finally {
       setIsUploading(false)
     }
@@ -301,6 +307,7 @@ export default function BidderPortalPage() {
 
   // Active documents lookup
   const currentDoc = documentsList.find((d: any) => d.docType === docSub) || documentsList[0]
+  const isDocReverifying = reverifyingDocType === currentDoc?.docType || (isUploading && docSub === currentDoc?.docType)
 
   return (
     <div className="flex flex-col md:flex-row gap-6 min-h-[calc(100vh-8rem)]">
@@ -1198,30 +1205,74 @@ export default function BidderPortalPage() {
                   Cryptographically verified document proofs with sovereign CA chain verification
                 </p>
               </div>
+            </div>
 
-              {/* Sample Test Assets Download Dropdown (Fix 31 demo helper) */}
-              <div className="flex items-center gap-2 bg-cream-100 p-2 rounded-lg border border-line text-micro">
-                <span className="font-semibold text-navy-900">Demo Test Assets:</span>
+            {/* Official Mock Test Documents Download Bar */}
+            <div className="p-4 bg-paper rounded-xl border border-line shadow-xs flex flex-col gap-2.5">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="flex items-center gap-2">
+                  <Download className="w-4 h-4 text-navy-800" />
+                  <span className="font-semibold text-navy-900 text-sm">
+                    Official Department Mock Files (Download to test document uploading &amp; replacement):
+                  </span>
+                </div>
+                <span className="text-xs text-ink-500 font-mono">Real valid PDFs with digital signatures</span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                 <a
-                  href="/backend-api/demo-assets/sample_pan_signed.pdf"
-                  download="sample_pan_signed.pdf"
-                  className="px-2 py-0.5 bg-paper rounded border border-line text-navy-900 font-mono hover:bg-cream-200"
+                  href="/sample-docs/PAN_Card_IncomeTax_AAWBS9999P.pdf"
+                  download="PAN_Card_IncomeTax_AAWBS9999P.pdf"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-cream-50 hover:bg-cream-100 text-navy-900 border border-line text-xs font-semibold transition-colors text-center"
+                  title="Income Tax Department - Form 49A PAN Card"
                 >
-                  PAN Signed
+                  <FileText className="w-3.5 h-3.5 text-saffron-600 shrink-0" />
+                  <span>1. PAN Card</span>
                 </a>
                 <a
-                  href="/backend-api/demo-assets/sample_gst_signed.pdf"
-                  download="sample_gst_signed.pdf"
-                  className="px-2 py-0.5 bg-paper rounded border border-line text-navy-900 font-mono hover:bg-cream-200"
+                  href="/sample-docs/GST_Certificate_27AAWBS9999P1Z5.pdf"
+                  download="GST_Certificate_27AAWBS9999P1Z5.pdf"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-cream-50 hover:bg-cream-100 text-navy-900 border border-line text-xs font-semibold transition-colors text-center"
+                  title="GSTN Portal - Form GST REG-06 Certificate"
                 >
-                  GST Signed
+                  <FileText className="w-3.5 h-3.5 text-navy-700 shrink-0" />
+                  <span>2. GST REG-06</span>
                 </a>
                 <a
-                  href="/backend-api/demo-assets/sample_tampered.pdf"
-                  download="sample_tampered.pdf"
-                  className="px-2 py-0.5 bg-paper rounded border border-line text-risk-critical font-mono hover:bg-cream-200"
+                  href="/sample-docs/Udyam_Registration_Certificate_UDYAM-MH-01-00892.pdf"
+                  download="Udyam_Registration_Certificate_UDYAM-MH-01-00892.pdf"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-cream-50 hover:bg-cream-100 text-navy-900 border border-line text-xs font-semibold transition-colors text-center"
+                  title="Ministry of MSME - Udyam Registration"
                 >
-                  Tampered PDF
+                  <FileText className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                  <span>3. Udyam MSME</span>
+                </a>
+                <a
+                  href="/sample-docs/ITR_V_Acknowledgement_AY2024-25.pdf"
+                  download="ITR_V_Acknowledgement_AY2024-25.pdf"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-cream-50 hover:bg-cream-100 text-navy-900 border border-line text-xs font-semibold transition-colors text-center"
+                  title="CBDT - Income Tax Return Acknowledgement"
+                >
+                  <FileText className="w-3.5 h-3.5 text-blue-700 shrink-0" />
+                  <span>4. ITR Filing</span>
+                </a>
+                <a
+                  href="/sample-docs/Debarment_Non_Blacklisting_Declaration.pdf"
+                  download="Debarment_Non_Blacklisting_Declaration.pdf"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-cream-50 hover:bg-cream-100 text-navy-900 border border-line text-xs font-semibold transition-colors text-center"
+                  title="GeM GFR Clause 17 - Non-Debarment Affidavit"
+                >
+                  <FileText className="w-3.5 h-3.5 text-amber-700 shrink-0" />
+                  <span>5. Non-Debarred</span>
+                </a>
+                <a
+                  href="/sample-docs/sample_tampered_document.pdf"
+                  download="sample_tampered_document.pdf"
+                  className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg bg-red-50 hover:bg-red-100 text-risk-critical border border-red-200 text-xs font-semibold transition-colors text-center"
+                  title="Tampered PDF - Injected Bytes Test"
+                >
+                  <AlertOctagon className="w-3.5 h-3.5 text-risk-critical shrink-0" />
+                  <span>6. Tampered PDF</span>
                 </a>
               </div>
             </div>
@@ -1296,7 +1347,9 @@ export default function BidderPortalPage() {
                     </p>
                   </div>
 
-                  {currentDoc.status === 'verified' ? (
+                  {isDocReverifying ? (
+                    <Badge variant="info" className="text-sm px-3.5 py-1 animate-pulse">⏳ Re-verifying New Document...</Badge>
+                  ) : currentDoc.status === 'verified' ? (
                     <Badge variant="success" className="text-sm px-3.5 py-1">Verified ✓</Badge>
                   ) : currentDoc.status === 'warning' ? (
                     <Badge variant="warning" className="text-sm px-3.5 py-1">Expiring in 30d ⚠</Badge>
@@ -1309,8 +1362,12 @@ export default function BidderPortalPage() {
 
                 {/* SHA-256 Checksum */}
                 <div className="p-3 bg-cream-50 rounded-lg border border-line flex items-center justify-between text-xs sm:text-sm font-mono text-ink-700">
-                  <span className="truncate mr-2">SHA-256: {currentDoc.sha256}</span>
-                  <span className="text-ink-500 shrink-0 font-sans font-medium">Immutable Hash</span>
+                  <span className="truncate mr-2">
+                    SHA-256: {isDocReverifying ? 'Computing cryptographic SHA-256 hash for uploaded version...' : currentDoc.sha256}
+                  </span>
+                  <span className="text-ink-500 shrink-0 font-sans font-medium">
+                    {isDocReverifying ? 'Ingestion In Progress' : 'Immutable Hash'}
+                  </span>
                 </div>
 
                 {/* Progressive Verification Pipeline Stepper */}
@@ -1320,14 +1377,16 @@ export default function BidderPortalPage() {
                       Progressive Verification Stepper (Mode: {currentDoc.docType})
                     </span>
                     <span className="text-xs font-mono text-ink-500">
-                      Status: {currentDoc.status.toUpperCase()}
+                      Status: {isDocReverifying ? 'RE-VERIFYING...' : currentDoc.status.toUpperCase()}
                     </span>
                   </div>
 
                   <div className="flex items-center gap-2.5 overflow-x-auto py-2">
                     {(DOC_STAGES[currentDoc.docType] || DOC_STAGES.pan_card).map((stg, i, arr) => {
                       const stageObj = currentDoc.stages?.find((s: any) => s.stage === stg)
-                      const stageStatus = stageObj
+                      const stageStatus = isDocReverifying
+                        ? (i === 0 ? 'passed' : i === 1 ? 'in_progress' : 'pending')
+                        : stageObj
                         ? stageObj.status
                         : currentDoc.status === 'verified'
                         ? 'passed'
@@ -1383,7 +1442,17 @@ export default function BidderPortalPage() {
                     <span>Cryptographic Verification</span>
                   </div>
 
-                  {currentDoc.cryptoVerification?.verified ? (
+                  {isDocReverifying ? (
+                    <div className="p-3.5 bg-amber-50/80 rounded-lg border border-amber-300 text-sm text-amber-900 flex flex-col gap-1.5 animate-pulse">
+                      <span className="font-semibold text-amber-800 flex items-center gap-1.5">
+                        <Clock className="w-5 h-5 text-amber-600 animate-spin" />
+                        Re-verifying Digital Signatures &amp; CA Trust Chains
+                      </span>
+                      <span className="text-xs text-amber-700">
+                        Inspecting newly uploaded file bytes, calculating digest, and validating certificate hierarchy...
+                      </span>
+                    </div>
+                  ) : currentDoc.cryptoVerification?.verified ? (
                     <div className="p-3.5 bg-risk-low/10 rounded-lg border border-risk-low/30 text-sm text-ink-800 flex flex-col gap-1.5">
                       <span className="font-semibold text-risk-low flex items-center gap-1.5">
                         <CheckCircle2 className="w-5 h-5" />
@@ -1411,7 +1480,7 @@ export default function BidderPortalPage() {
                   ) : (
                     <div className="p-3.5 bg-cream-50 rounded-lg border border-line text-sm text-ink-600 flex flex-col gap-1.5">
                       <span className="font-semibold flex items-center gap-1.5 text-ink-700">
-                        ○ No digital signature found
+                        ○ Digital signature check in progress / No digital signature found
                       </span>
                       <span className="text-xs text-ink-500">
                         If you have a DigiLocker-issued version or DSC signed copy, upload it for stronger verification.

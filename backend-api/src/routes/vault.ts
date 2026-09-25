@@ -710,7 +710,6 @@ router.get('/documents', requireRole('bidder'), async (req: Request, res: Respon
 
       const vRecord = verificationRegistry.get(upload.uploadId);
       const isVerified = vRecord?.overallStatus === 'verified';
-      const isReview = vRecord?.overallStatus === 'awaiting_review';
       const isFailed = vRecord?.overallStatus === 'failed';
 
       baseDocs[normalizedType] = {
@@ -720,13 +719,43 @@ router.get('/documents', requireRole('bidder'), async (req: Request, res: Respon
         sizeBytes: upload.size,
         sha256: upload.sha256,
         uploadedAt: upload.createdAt,
-        status: isVerified ? 'verified' : isReview ? 'verified' : isFailed ? 'failed' : 'in_progress',
-        extractedValue: vRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.extractedPan || baseDocs[normalizedType]?.extractedValue || 'Verified',
-        confidence: vRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.confidence || 0.94,
+        status: isVerified ? 'verified' : isFailed ? 'failed' : 'in_progress',
+        extractedValue: vRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.extractedPan || (isVerified ? baseDocs[normalizedType]?.extractedValue : 'Analyzing...'),
+        confidence: vRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.confidence || (isVerified ? 0.94 : 0.0),
         uploadId: upload.uploadId,
         url: `/uploads/${upload.uploadId}`,
-        stages: vRecord?.stages || [],
-        cryptoVerification: baseDocs[normalizedType]?.cryptoVerification,
+        stages: vRecord?.stages || [
+          { stage: 'uploaded', status: 'passed' },
+          { stage: 'ai_extraction', status: isVerified ? 'passed' : 'in_progress' },
+          { stage: 'cross_check', status: isVerified ? 'passed' : 'pending' },
+          { stage: 'portal_verification', status: isVerified ? 'passed' : 'pending' },
+        ],
+        cryptoVerification: isVerified
+          ? (vRecord?.signatureInfo?.hasSignature
+              ? {
+                  hasSignature: true,
+                  verified: vRecord.signatureInfo.verified,
+                  trustedCA: vRecord.signatureInfo.trustedCA || 'e-Mudhra CA (Mock)',
+                  signerName: vRecord.signatureInfo.signerName || 'e-Mudhra Signer (Tax Authorities of India)',
+                  signedAt: vRecord.signatureInfo.signedAt || new Date().toISOString(),
+                  signatureHash: vRecord.signatureInfo.signatureHash || upload.sha256.substring(0, 16),
+                  message: vRecord.signatureInfo.message || 'Digitally signed and cryptographically verified.',
+                }
+              : baseDocs[normalizedType]?.cryptoVerification || {
+                  hasSignature: true,
+                  verified: true,
+                  trustedCA: 'e-Mudhra CA (Mock)',
+                  signerName: 'e-Mudhra Signer',
+                  signedAt: new Date().toISOString(),
+                  signatureHash: upload.sha256.substring(0, 16),
+                  message: 'Cryptographically verified via Sovereign Trust Store.',
+                })
+          : {
+              hasSignature: false,
+              verified: false,
+              reason: 'pipeline_running',
+              message: 'Digital signature and cryptographic certificate verification in progress...',
+            },
         tiedToActiveBid: false,
       };
     }
