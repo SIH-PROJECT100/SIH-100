@@ -1,10 +1,10 @@
+# backend-api .gitignore
+.env
+.env.local
+.env.*.local
 node_modules/
 dist/
-.env
-.env.*.local
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-.DS_Store
+uploads/
 *.log
+coverage/
+*.tsbuildinfo

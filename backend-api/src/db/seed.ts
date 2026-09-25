@@ -60,103 +60,140 @@ async function seed() {
   }
   console.log(`✅ Seeded ${users.length} users`);
 
-  // ─── 2. Tenders ──────────────────────────────────────────────────────────
-  const tenders = [
-    {
-      id: 'tender-001',
-      title: 'Procurement of IT Hardware and Peripherals 2026',
-      gemTenderId: 'GEM/2026/B/3245678',
-      status: 'evaluation' as const,
-    },
-    {
-      id: 'tender-002',
-      title: 'Supply of Office Stationery and Consumables 2026',
-      gemTenderId: 'GEM/2026/B/3345679',
-      status: 'evaluation' as const,
-    },
-  ];
-
-  for (const tender of tenders) {
-    await prisma.tender.upsert({
-      where: { gemTenderId: tender.gemTenderId },
-      update: { title: tender.title, status: tender.status },
-      create: tender,
-    });
-  }
-  console.log(`✅ Seeded ${tenders.length} tenders`);
-
-  // ─── 3. Bidders ───────────────────────────────────────────────────────────
-  const seedDataPath = join(__dirname, '../../../seed-data/bidders.json');
-  const biddersData: BidderSeedData[] = JSON.parse(readFileSync(seedDataPath, 'utf-8'));
-
-  let biddersSeeded = 0;
-  for (const bidder of biddersData) {
-    await prisma.bidder.upsert({
-      where: { id: bidder.id },
-      update: {
-        overallRisk: bidder.overallRisk,
-        riskScore: bidder.riskScore,
-        checks: bidder.checks as never,
+  // ─── 2. Tenders & 3. Bidders ─────────────────────────────────────────────
+  if (process.env.SEED_LEGACY_BIDDERS === 'true') {
+    const tenders = [
+      {
+        id: 'tender-001',
+        title: 'Procurement of IT Hardware and Peripherals 2026',
+        gemTenderId: 'GEM/2026/B/3245678',
+        status: 'evaluation' as const,
       },
-      create: {
-        id: bidder.id,
-        tenderId: bidder.tenderId,
-        companyName: bidder.companyName,
-        udyamNumber: bidder.udyamNumber,
-        gstin: bidder.gstin,
-        pan: bidder.pan,
-        overallRisk: bidder.overallRisk,
-        riskScore: bidder.riskScore,
-        checks: bidder.checks as never,
+      {
+        id: 'tender-002',
+        title: 'Supply of Office Stationery and Consumables 2026',
+        gemTenderId: 'GEM/2026/B/3345679',
+        status: 'evaluation' as const,
       },
-    });
-    biddersSeeded++;
-  }
-  console.log(`✅ Seeded ${biddersSeeded} bidders`);
+    ];
 
-  // ─── 4. Initial audit trail entries (one verification_run per bidder) ───
-  let ledgerSeeded = 0;
-  for (const bidder of biddersData) {
-    const existingEntries = await getLedgerForBidder(bidder.id);
-    if (existingEntries.length === 0) {
-      await appendToLedger({
-        bidderId: bidder.id,
-        actorType: 'system',
-        actorId: null,
-        action: 'verification_run',
-        detail: {
-          note: 'Initial verification seeded from bidders.json',
-          checksCount: (bidder.checks as unknown[]).length,
+    for (const tender of tenders) {
+      await prisma.tender.upsert({
+        where: { gemTenderId: tender.gemTenderId },
+        update: { title: tender.title, status: tender.status },
+        create: tender,
+      });
+    }
+    console.log(`✅ Seeded ${tenders.length} legacy tenders`);
+
+    const seedDataPath = join(__dirname, '../../../seed-data/bidders.json');
+    const biddersData: BidderSeedData[] = JSON.parse(readFileSync(seedDataPath, 'utf-8'));
+
+    let biddersSeeded = 0;
+    for (const bidder of biddersData) {
+      await prisma.bidder.upsert({
+        where: { id: bidder.id },
+        update: {
+          overallRisk: bidder.overallRisk,
+          riskScore: bidder.riskScore,
+          checks: bidder.checks as never,
+          approvalState: 'pending',
+          primaryReviewerId: null,
+          primaryReviewedAt: null,
+          secondaryReviewerId: null,
+          secondaryReviewedAt: null,
+          officerDecision: null as any,
+        },
+        create: {
+          id: bidder.id,
+          tenderId: bidder.tenderId,
+          companyName: bidder.companyName,
+          udyamNumber: bidder.udyamNumber,
+          gstin: bidder.gstin,
+          pan: bidder.pan,
+          overallRisk: bidder.overallRisk,
+          riskScore: bidder.riskScore,
+          checks: bidder.checks as never,
         },
       });
-      ledgerSeeded++;
+      biddersSeeded++;
     }
+    console.log(`✅ Seeded ${biddersSeeded} legacy bidders`);
+
+    let ledgerSeeded = 0;
+    for (const bidder of biddersData) {
+      const existingEntries = await getLedgerForBidder(bidder.id);
+      if (existingEntries.length === 0) {
+        await appendToLedger({
+          bidderId: bidder.id,
+          actorType: 'system',
+          actorId: null,
+          action: 'verification_run',
+          detail: {
+            note: 'Initial verification seeded from bidders.json',
+            checksCount: (bidder.checks as unknown[]).length,
+          },
+        });
+        ledgerSeeded++;
+      }
+    }
+    console.log(`✅ Seeded ${ledgerSeeded} initial ledger entries`);
+  } else {
+    console.log('ℹ️ Skipping legacy fixtures (seed_phase9.ts manages demo dataset)');
   }
-  console.log(`✅ Seeded ${ledgerSeeded} initial ledger entries`);
 
   // ─── 5. Default RulesConfig ───────────────────────────────────────────────
   const defaultConfig = {
-    msme: { weight: 20, requiredForTender: true },
-    gst: { weight: 20, flaggedPenalty: 15 },
-    pan_itr: { weight: 15, mismatchPenalty: 20 },
-    blacklist: { weight: 30, flaggedPenalty: 50 },
-    make_in_india: { weight: 10, requiredForTender: false },
-    local_content: { minPercentage: 50, weight: 5 },
-    riskThresholds: { low: 25, medium: 50, high: 75 },
+    msme: { weight: 0.25, requiredForTender: true },
+    gst: { weight: 0.2, flaggedPenalty: 0.3 },
+    pan_itr: { weight: 0.2, mismatchPenalty: 0.25 },
+    blacklist: { weight: 0.25, flaggedPenalty: 1.0 },
+    make_in_india: { weight: 0.1, requiredForTender: false },
+    local_content: { minPercentage: 50, weight: 0.1 },
+    verificationValidity: {
+      msme: 1825,
+      gst: 365,
+      pan_itr: 365,
+      blacklist: 90,
+      make_in_india: 365,
+    },
+    confidenceThresholds: {
+      auto_flag_below: 0.6,
+      human_review_below: 0.8,
+    },
+    collusionSignalWeights: {
+      sequential_pan: 0.2,
+      address_similarity: 0.2,
+      ip_prefix: 0.15,
+      price_cv: 0.2,
+      common_director: 0.15,
+      registration_cluster: 0.1,
+    },
+    collusionThreshold: 0.6,
+    deliveryGraceDays: 7,
+    riskThresholds: { low: 0.3, medium: 0.6, high: 0.85 },
+    session: { maxLifetimeSeconds: 3600 },
+    compliance: {
+      first_bid: { weight: 5, enabled: true },
+      five_bids: { weight: 10, enabled: true },
+      ten_bids: { weight: 15, enabled: true },
+      on_time_streak_3: { weight: 15, enabled: true },
+      verified_veteran: { weight: 20, enabled: true },
+      msme_verified: { weight: 10, enabled: true },
+      zero_gst_defaults: { weight: 15, enabled: true },
+      class_1_local_supplier: { weight: 10, enabled: true },
+      clean_anti_cartel: { weight: 20, enabled: true },
+    },
   };
 
-  const existing = await prisma.rulesConfig.count();
-  if (existing === 0) {
-    await prisma.rulesConfig.create({
-      data: {
-        config: defaultConfig,
-        updatedBy: 'system',
-      },
-    });
-    console.log(`✅ Seeded default RulesConfig`);
-  } else {
-    console.log(`ℹ️  RulesConfig already exists, skipping`);
-  }
+  await prisma.rulesConfig.deleteMany();
+  await prisma.rulesConfig.create({
+    data: {
+      config: defaultConfig,
+      updatedBy: 'system',
+    },
+  });
+  console.log(`✅ Seeded default RulesConfig with 9 compliance badge keys`);
 
   const totalBidders = await prisma.bidder.count();
   const totalLedger = await countLedgerEntries();

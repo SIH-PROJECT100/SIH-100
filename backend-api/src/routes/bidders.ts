@@ -4,6 +4,9 @@ import { prisma } from '../db/client.js';
 import { verifyBidder } from '../services/orchestrator.js';
 import { appendToLedger } from '../services/ledger.js';
 import { requireRole } from '../middleware/auth.js';
+import { computeVerificationStatus } from '../services/validity/validity.js';
+import { computeNextGoals } from '../services/profile/profile.js';
+import { verifyLimiter } from '../middleware/rateLimits.js';
 
 const router = Router();
 
@@ -66,11 +69,27 @@ router.get('/:id', async (req: Request, res: Response, next: NextFunction) => {
     }
 
     // Mask PII before returning to caller — arch doc §8
-    const masked = {
+    const masked: any = {
       ...bidder,
       pan: maskPan(bidder.pan),
       gstin: maskGstin(bidder.gstin),
     };
+
+    // Anti-anchoring (Feature 4): hide primary reviewer's reason if in primary_approved
+    // and the requesting user is not the primary reviewer. Only revealed post-secondary-submit.
+    if (
+      bidder.approvalState === 'primary_approved' &&
+      bidder.primaryReviewerId &&
+      req.user?.id !== bidder.primaryReviewerId
+    ) {
+      if (masked.officerDecision && typeof masked.officerDecision === 'object') {
+        masked.officerDecision = {
+          ...masked.officerDecision,
+          reason: null,
+          reasonRedacted: true,
+        };
+      }
+    }
 
     res.status(200).json({ data: masked, error: null });
   } catch (err) {
@@ -151,7 +170,7 @@ router.get(
 );
 
 // POST /bidders/:id/verify — trigger verification pipeline
-router.post('/:id/verify', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/:id/verify', verifyLimiter, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const paramParsed = IdParamSchema.safeParse(req.params);
     if (!paramParsed.success) {
@@ -164,6 +183,35 @@ router.post('/:id/verify', async (req: Request, res: Response, next: NextFunctio
 
     const { id } = paramParsed.data;
     const force = req.query.force === 'true' || req.body?.force === true;
+
+    // Feature 3: enforce fee gate before verification
+    const bidderForFee = await prisma.bidder.findUnique({
+      where: { id },
+      select: { tenderId: true },
+    });
+    if (bidderForFee) {
+      const tender = await prisma.tender.findUnique({
+        where: { id: bidderForFee.tenderId },
+        select: { applicationFee: true },
+      });
+      if (tender && Number(tender.applicationFee) > 0) {
+        const payment = await prisma.applicationFeePayment.findUnique({
+          where: { tenderId_bidderId: { tenderId: bidderForFee.tenderId, bidderId: id } },
+          select: { status: true },
+        });
+        if (!payment || payment.status !== 'paid') {
+          res.status(402).json({
+            data: null,
+            error: {
+              message: 'Payment required: application fee unpaid',
+              code: 'PAYMENT_REQUIRED',
+            },
+          });
+          return;
+        }
+      }
+    }
+
     const verifiedBidder = await verifyBidder(id, {
       force,
       actorId: req.user?.id,
@@ -178,5 +226,109 @@ router.post('/:id/verify', async (req: Request, res: Response, next: NextFunctio
     next(err);
   }
 });
+
+// POST /bidders/:id/reverify — officer/admin force-reruns verification pipeline
+router.post(
+  '/:id/reverify',
+  requireRole('officer', 'admin'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const paramParsed = IdParamSchema.safeParse(req.params);
+      if (!paramParsed.success) {
+        res.status(400).json({
+          data: null,
+          error: { message: paramParsed.error.issues[0]?.message ?? 'Invalid bidder id' },
+        });
+        return;
+      }
+
+      const { id } = paramParsed.data;
+
+      // verifyBidder with force:true snaps previousChecks in the ledger detail automatically
+      const verifiedBidder = await verifyBidder(id, {
+        force: true,
+        actorId: req.user!.id,
+      });
+
+      // Compute refreshed status to confirm freshness
+      const checksArr = Array.isArray(verifiedBidder.checks) ? (verifiedBidder.checks as any[]) : [];
+      const verificationStatus = computeVerificationStatus(checksArr);
+
+      res.status(200).json({
+        data: { ...verifiedBidder, verificationStatus },
+        error: null,
+      });
+    } catch (err: any) {
+      if (err.statusCode === 404 || err.message === 'Bidder not found') {
+        res.status(404).json({ data: null, error: { message: 'Bidder not found' } });
+        return;
+      }
+      next(err);
+    }
+  }
+);
+
+
+// GET /bidders/profile/:companyHash — officer/admin only
+// Returns the trust profile (score + badges + next goals) for a company identified by sha256(pan).
+router.get(
+  '/profile/:companyHash',
+  requireRole('officer', 'admin'),
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const { companyHash } = req.params;
+
+      if (!companyHash || !/^[0-9a-f]{64}$/.test(companyHash)) {
+        res.status(400).json({
+          data: null,
+          error: { message: 'companyHash must be a 64-character hex string (sha256 of PAN)' },
+        });
+        return;
+      }
+
+      const profile = await prisma.bidderProfile.findUnique({
+        where: { bidderCompanyId: companyHash },
+      });
+
+      if (!profile) {
+        res.status(404).json({ data: null, error: { message: 'Bidder profile not found' } });
+        return;
+      }
+
+      const nextGoals = computeNextGoals({
+        totalBidsSubmitted: profile.totalBidsSubmitted,
+        onTimeDeliveries: profile.onTimeDeliveries,
+        lateDeliveries: profile.lateDeliveries,
+        failedDeliveries: profile.failedDeliveries,
+        disqualifications: profile.disqualifications,
+        trustScore: profile.trustScore,
+        badges: profile.badges as string[],
+      });
+
+      res.status(200).json({
+        data: {
+          companyHash: profile.bidderCompanyId,
+          displayName: profile.displayName,
+          trustScore: profile.trustScore,
+          badges: profile.badges,
+          stats: {
+            totalBidsSubmitted: profile.totalBidsSubmitted,
+            totalBidsWon: profile.totalBidsWon,
+            totalBidsLost: profile.totalBidsLost,
+            onTimeDeliveries: profile.onTimeDeliveries,
+            lateDeliveries: profile.lateDeliveries,
+            failedDeliveries: profile.failedDeliveries,
+            disqualifications: profile.disqualifications,
+          },
+          nextGoals,
+          lastUpdated: profile.updatedAt,
+        },
+        error: null,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+);
 
 export default router;

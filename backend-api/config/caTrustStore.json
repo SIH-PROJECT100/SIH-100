@@ -1,0 +1,78 @@
+{
+  "version": "1.0",
+  "updatedAt": "2026-09-24T00:00:00Z",
+  "authorities": [
+    {
+      "id": "nic-ca",
+      "name": "NIC Certifying Authority (Mock)",
+      "organization": "National Informatics Centre",
+      "country": "IN",
+      "subject": "CN=NIC-CA (Mock), O=National Informatics Centre (Mock), C=IN",
+      "validFrom": "2020-01-01T00:00:00Z",
+      "validTo": "2035-12-31T23:59:59Z",
+      "status": "active",
+      "keyAlgorithm": "RSA-2048",
+      "trustedFor": ["digilocker", "government_documents", "udyam"]
+    },
+    {
+      "id": "emudhra",
+      "name": "e-Mudhra Consumer Services CA (Mock)",
+      "organization": "e-Mudhra Limited",
+      "country": "IN",
+      "subject": "CN=e-Mudhra CA (Mock), O=e-Mudhra Limited (Mock), C=IN",
+      "validFrom": "2021-01-01T00:00:00Z",
+      "validTo": "2036-12-31T23:59:59Z",
+      "status": "active",
+      "keyAlgorithm": "RSA-2048",
+      "trustedFor": ["pan_card", "digital_signatures", "corporate"]
+    },
+    {
+      "id": "sify",
+      "name": "Sify Safescrypt CA (Mock)",
+      "organization": "Sify Technologies Limited",
+      "country": "IN",
+      "subject": "CN=Sify Safescrypt CA (Mock), O=Sify Technologies Limited (Mock), C=IN",
+      "validFrom": "2019-01-01T00:00:00Z",
+      "validTo": "2034-12-31T23:59:59Z",
+      "status": "active",
+      "keyAlgorithm": "RSA-2048",
+      "trustedFor": ["gst_certificate", "tax_filing"]
+    },
+    {
+      "id": "ncode",
+      "name": "(n)Code Solutions CA (Mock)",
+      "organization": "Gujarat Narmada Valley Fertilizers & Chemicals",
+      "country": "IN",
+      "subject": "CN=(n)Code Solutions (Mock), O=GNFC (Mock), C=IN",
+      "validFrom": "2020-06-01T00:00:00Z",
+      "validTo": "2035-06-01T23:59:59Z",
+      "status": "active",
+      "keyAlgorithm": "RSA-2048",
+      "trustedFor": ["eprocurement", "tenders"]
+    },
+    {
+      "id": "capricorn",
+      "name": "Capricorn Identity Services CA (Mock)",
+      "organization": "Capricorn Identity Services Pvt Ltd",
+      "country": "IN",
+      "subject": "CN=Capricorn CA (Mock), O=Capricorn Identity Services (Mock), C=IN",
+      "validFrom": "2021-03-01T00:00:00Z",
+      "validTo": "2036-03-01T23:59:59Z",
+      "status": "active",
+      "keyAlgorithm": "RSA-2048",
+      "trustedFor": ["dsc_class_3", "business_compliance"]
+    },
+    {
+      "id": "idrbt",
+      "name": "IDRBT CA (Mock)",
+      "organization": "Institute for Development and Research in Banking Technology",
+      "country": "IN",
+      "subject": "CN=IDRBT CA (Mock), O=IDRBT (Mock), C=IN",
+      "validFrom": "2018-01-01T00:00:00Z",
+      "validTo": "2033-12-31T23:59:59Z",
+      "status": "active",
+      "keyAlgorithm": "RSA-2048",
+      "trustedFor": ["banking", "emd_guarantees"]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ export interface RulesConfigData {
   make_in_india?: { weight?: number; requiredForTender?: boolean };
   local_content?: { minPercentage?: number; weight?: number };
   riskThresholds?: { low: number; medium: number; high: number };
+  delivery?: { graceDays?: number };
   [key: string]: any;
 }
 
