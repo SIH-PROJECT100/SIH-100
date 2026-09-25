@@ -1,31 +1,57 @@
-# Dependencies
-node_modules/
-.pnp
-.pnp.js
+# BharatBid — Root .gitignore
 
-# Build outputs
-dist/
-build/
-out/
-
-# Environment and secrets
+# Env secrets — NEVER commit
 .env
 .env.local
 .env.*.local
-*.pem
+*.env
+
+# Node
+node_modules/
+dist/
+build/
 
 # Logs
+*.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-*.log
 
-# OS / Editor files
+# OS
 .DS_Store
 Thumbs.db
-.vscode/
+
+# Editor
+.vscode/settings.json
 .idea/
-*.swp
-*.swo
+
+# TypeScript build cache
+*.tsbuildinfo
+
+# Uploads (local dev only)
+uploads/
+backend-api/uploads/
+
+# Prisma
+backend-api/prisma/dev.db
+backend-api/prisma/dev.db-journal
+
+# Test artifacts
+coverage/
+*.snap
+
+# Frontend build & modules
+bharatbid/node_modules/
+bharatbid/dist/
+
+# Scratch & temporary
+scratch/
+backend-api/scratch/
+
+# Omit docs files per instruction
+docs/
+bharatbid/docs/
+backend-api/docs/
+backend-api/src/docs/
+ANTIGRAVITY_*.md
+BACKEND_BUILD_PLAYBOOK*.md

@@ -1,4 +1,4 @@
-name: Backend CI & Immutability Verification
+name: GeM Compliance Platform CI/CD
 
 on:
   push:
@@ -8,7 +8,7 @@ on:
 
 jobs:
   verify:
-    name: Build & Replay Verification
+    name: Build, Test & Immutability Verification
     runs-on: ubuntu-latest
 
     services:
@@ -61,22 +61,47 @@ jobs:
         run: |
           psql "postgresql://postgres:postgres@localhost:5432/gem_compliance" -f backend-api/prisma/sql/ledger_lockdown.sql
 
-      - name: Seed database
+      - name: Seed database (Base + Phase 9 Demo Seed)
         working-directory: ./backend-api
         env:
           DATABASE_URL: "postgresql://backend_app:backend_app_secure_password_2026@localhost:5432/gem_compliance?schema=public"
           DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=public"
-        run: npm run db:seed
+        run: |
+          npm run db:seed
+          npx tsx scripts/seed_phase9.ts
 
       - name: Build TypeScript project
         working-directory: ./backend-api
         run: npm run build
 
-      - name: Verify AI Extraction Schema Contract
+      - name: Start backend server in background
         working-directory: ./backend-api
         env:
+          NODE_ENV: test
+          PORT: 4000
+          DATABASE_URL: "postgresql://backend_app:backend_app_secure_password_2026@localhost:5432/gem_compliance?schema=public"
+          DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=public"
+          JWT_SECRET: "super_secure_jwt_secret_key_for_gem_compliance_2026"
           GEMINI_API_KEY: "mock_gemini_api_key_for_ci"
-        run: npx tsx test_ai_contract.ts
+          RATE_LIMIT_TEST_MODE: "true"
+        run: |
+          npm run dev &
+          echo "Waiting for backend server to report healthy..."
+          for i in {1..30}; do
+            if curl -s http://localhost:4000/health | grep -q "ok"; then
+              echo "✅ Server healthy on port 4000"
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run Full Vitest Test Suite (22 test files, 275+ tests)
+        working-directory: ./backend-api
+        env:
+          NODE_ENV: test
+          RATE_LIMIT_TEST_MODE: "true"
+          GEMINI_API_KEY: "mock_gemini_api_key_for_ci"
+        run: npm test
 
       - name: Test Dual-Layer Ledger Immutability (Role + Trigger layers)
         run: |
@@ -100,3 +125,17 @@ jobs:
             -c "\dp ledger_entries" | grep -q "ledger_append_only=ar/postgres"
           
           echo "✅ Dual-layer ledger immutability verified clean."
+
+      - name: Run Phase 12 Baseline Replay Script
+        working-directory: ./backend-api
+        shell: pwsh
+        run: |
+          ./test_phase12.ps1
+
+      - name: Run Headless Walkthroughs (Phases 5, 6, 8)
+        working-directory: ./backend-api
+        run: |
+          npx tsx scripts/run_walkthrough_phase5.ts
+          npx tsx scripts/run_walkthrough_phase6.ts
+          npx tsx scripts/run_walkthrough_phase8.ts
+          echo "✅ All headless phase walkthroughs completed successfully."

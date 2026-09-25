@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { z } from 'zod';
 import { config } from '../config.js';
 
@@ -59,11 +59,11 @@ export function resetAiCallCount(): void {
   aiCallCounter = 0;
 }
 
-let geminiClient: GoogleGenerativeAI | null = null;
+let geminiClient: GoogleGenAI | null = null;
 
-function getClient(): GoogleGenerativeAI {
+function getClient(): GoogleGenAI {
   if (!geminiClient) {
-    geminiClient = new GoogleGenerativeAI(config.GEMINI_API_KEY);
+    geminiClient = new GoogleGenAI({ apiKey: config.GEMINI_API_KEY });
   }
   return geminiClient;
 }
@@ -149,16 +149,7 @@ export async function extractDocumentData(
   if (config.GEMINI_API_KEY && !config.GEMINI_API_KEY.startsWith('mock_')) {
     try {
       const client = getClient();
-      const model = client.getGenerativeModel({
-        model: 'gemini-1.5-flash',
-        generationConfig: {
-          responseMimeType: 'application/json',
-          temperature: 0.1,
-        },
-      });
-
-      const prompt = `
-You are an expert Indian Government e-Procurement (GeM) document verification parser.
+      const prompt = `You are an expert Indian Government e-Procurement (GeM) document verification parser.
 Analyze the following document text and extract the exact fields requested.
 Return ONLY valid JSON matching this schema:
 {
@@ -176,10 +167,13 @@ Document File Name: ${fileName || 'unspecified'}
 Document Content:
 """
 ${documentText.slice(0, 10000)}
-"""
-`;
-      const response = await model.generateContent(prompt);
-      const text = response.response.text();
+"""`;
+      const response = await client.models.generateContent({
+        model: 'gemini-1.5-flash',
+        contents: prompt,
+        config: { responseMimeType: 'application/json', temperature: 0.1 },
+      });
+      const text = response.text ?? '';
       rawResult = JSON.parse(text);
     } catch (err) {
       // If network fails or Gemini call errors, fall back to deterministic extraction

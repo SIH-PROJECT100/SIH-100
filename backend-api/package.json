@@ -8,19 +8,33 @@
     "dev": "tsx watch src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "db:seed": "tsx src/db/seed.ts"
+    "test": "vitest run",
+    "db:seed": "tsx src/db/seed.ts",
+    "verify:demo": "tsx scripts/verify-demo-state.ts"
   },
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
+    "@google/genai": "^2.23.0",
     "@prisma/client": "^5.22.0",
+    "@types/multer": "^1.4.12",
+    "@zxing/library": "^0.23.0",
     "bcryptjs": "^2.4.3",
+    "cheerio": "^1.2.0",
     "cors": "^2.8.5",
+    "date-fns": "^4.4.0",
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "express-rate-limit": "^7.4.1",
+    "fastest-levenshtein": "^1.0.16",
+    "gstin-validator": "^1.1.3",
     "helmet": "^8.0.0",
+    "json-canonicalize": "^3.0.1",
     "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "p-retry": "^8.0.1",
+    "pdf-lib": "^1.17.1",
+    "pdf-parse": "^2.4.5",
     "pg": "^8.13.1",
+    "xml-crypto": "^6.3.1",
     "zod": "^3.23.8"
   },
   "devDependencies": {
@@ -29,9 +43,11 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.7",
     "@types/node": "^20.17.6",
+    "@types/pdf-parse": "^1.1.5",
     "@types/pg": "^8.11.10",
     "prisma": "^5.22.0",
     "tsx": "^4.19.2",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.9"
   }
 }

@@ -1,0 +1,8 @@
+<Certificate issuer="CCA-India" certificateType="UdyamRegistration" Id="_0">
+  <IssuedTo>
+    <Company>Fraudulent Shell Corp Ltd</Company>
+    <PAN>AAACS1234H</PAN>
+    <RegistrationDate>2022-04-15</RegistrationDate>
+  </IssuedTo>
+  <Status>ACTIVE</Status>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI="#_0"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>UuPjz6U/m7lL3ImRdRMgV9A8Am/UH0IiGC8iY3Tz0Qg=</DigestValue></Reference></SignedInfo><SignatureValue>LKFjAwwO9202PaSeVVpFA4yPP/LjtR6gFJmvOW6ZawoKBjQjqqZfUv27XRfmRDV3qq/21iTJnJYfmN7BzeluTgRZQJIOUJoQywYGnQjZJZ2SUmciQXEDNAo9WsG0M0mpbjjeN0v3YOIK/sc8t0UJV2CfE82+Qf3PgioP6K/vv8ZJx/+Z9n+lLXTvyXc1CQ0F7GulefngonrEbUfckwUuSA0lASSDtZ3nQ4e+d2mJnYR+VPXBKgEFrt0/qtkmhoZaUiTwsTtjNEuFnjkFM4XdhKEuktW79MyzmoG8COJW+9NqxS6vZkjGtMNSAp2HgYfhvlD3O0aMWBBUVjCRa70ZTg==</SignatureValue></Signature></Certificate>

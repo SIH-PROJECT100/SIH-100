@@ -195,6 +195,8 @@ if ($dpRestored -match "ledger_append_only=ar/postgres") {
 
 # --------- Phase 7: Officer Decisions Flow ------------------------------------------------------------------------------------------------------------------------------
 Section "Phase 7: Officer Decisions Flow"
+# Ensure bidder starts in pending state
+(& psql $directUrl --command "UPDATE bidders SET approval_state = 'pending', primary_reviewer_id = NULL, primary_reviewed_at = NULL, secondary_reviewer_id = NULL, secondary_reviewed_at = NULL, officer_decision = NULL WHERE id = '$BIDDER_ID';" 2>&1) | Out-Null
 # Rejection on empty reason for clarification_requested
 $badDecBody = [ordered]@{ status = "clarification_requested"; reason = "   " } | ConvertTo-Json
 try {
@@ -213,6 +215,8 @@ if ($decRes.data.bidder.officerDecision.status -eq "qualified" -or $decRes.data.
 } else {
     Fail "Officer decision failed" ($decRes | ConvertTo-Json -Depth 3)
 }
+# Reset bidder state to pending for idempotent re-runs
+& psql $directUrl --command "UPDATE bidders SET approval_state = 'pending', primary_reviewer_id = NULL, primary_reviewed_at = NULL, secondary_reviewer_id = NULL, secondary_reviewed_at = NULL, officer_decision = NULL WHERE id = '$BIDDER_ID';" 2>&1 | Out-Null
 
 # --------- Phase 8: AI Extraction Contract ------------------------------------------------------------------------------------------------------------------------------
 Section "Phase 8: AI Extraction Contract & Error Handling"
@@ -234,7 +238,7 @@ if ($aiOutput -match "AI_CORRUPT_HANDLED:ExtractionError") {
 # --------- Phase 9: Connectors & Full Verification Orchestrator ---------------------------------------------------------------
 Section "Phase 9: Full Verification Flow (POST /bidders/:id/verify)"
 $ledgerBefore = ((& psql $directUrl --tuples-only --command "SELECT count(*) FROM ledger_entries;" 2>&1) | Out-String).Trim()
-$verifyRes = Invoke-RestMethod -Method POST -Uri "$BASE/bidders/$BIDDER_ID/verify" -Headers @{ Authorization = "Bearer $OT" }
+$verifyRes = Invoke-RestMethod -Method POST -Uri "$BASE/bidders/$BIDDER_ID/verify?force=true" -Headers @{ Authorization = "Bearer $OT" }
 $ledgerAfter = ((& psql $directUrl --tuples-only --command "SELECT count(*) FROM ledger_entries;" 2>&1) | Out-String).Trim()
 
 Write-Host "  Overall Risk: $($verifyRes.data.overallRisk)"

@@ -1,0 +1,8 @@
+<Certificate issuer="CCA-India" certificateType="UdyamRegistration" certExpiresAt="2020-01-01T00:00:00Z" Id="_0">
+  <IssuedTo>
+    <Company>Expired Entity Ltd</Company>
+    <PAN>AAACE9999K</PAN>
+    <RegistrationDate>2015-01-01</RegistrationDate>
+  </IssuedTo>
+  <Status>ACTIVE</Status>
+<Signature xmlns="http://www.w3.org/2000/09/xmldsig#"><SignedInfo><CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><Reference URI="#_0"><Transforms><Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/></Transforms><DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><DigestValue>C7EIWBaVY1YS2+HAxHjMXwzQdNBaiCAPrw/uRkVk1mQ=</DigestValue></Reference></SignedInfo><SignatureValue>WbUqM27raNmF3ZGTF5zEChXpujOOwxRQLy+Dcn27KlHaHPIOCTD5RdvF0XpDRQZqQCTvqNLtpBbv7q2ugTsO5S8af17EgfQ9C0y0VUSHrRMQNQ4NprbuM0+tdqWV4yOOOKYH/vanYRxwbTqOnrXZEemdFhQubN6/Sph3rzbtPpE7E4RNv4cCiiMLSB1HRVTBR5oFAgpu7euZPXWwDnwcWeKNotDan+SZWGj1oohcoCBAQ5495uSt2a55rv8PYVrUbaEKLTd6S9qLsyH0unIAXNMBIbnZBEbIlQTsBTv0vG2SIf1Q/BfQE6Wyl2wPQe3UIHnBpNioqSnPESnz/fv7Rw==</SignatureValue></Signature></Certificate>

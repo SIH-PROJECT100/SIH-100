@@ -1,0 +1,230 @@
+/* ============================================================
+   BharatBid Global Styles
+   Design tokens defined here are also consumed via Tailwind
+   theme extensions. CSS variables are the single source of
+   truth for runtime theming.
+   ============================================================ */
+
+/* --- Fonts (self-hosted via @fontsource) --- */
+@import '@fontsource/inter/400.css';
+@import '@fontsource/inter/500.css';
+@import '@fontsource/inter/600.css';
+@import '@fontsource/inter/700.css';
+@import '@fontsource/fraunces/400.css';
+@import '@fontsource/fraunces/500.css';
+@import '@fontsource/fraunces/600.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/500.css';
+@import '@fontsource/noto-sans-devanagari/400.css';
+@import '@fontsource/noto-sans-devanagari/500.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* --- CSS Custom Properties (design tokens) --- */
+:root {
+  /* Mode A — Government Formal */
+  --color-navy-900: #0F2942;
+  --color-navy-700: #1E3A5F;
+  --color-navy-100: #E8EEF4;
+
+  --color-saffron-600: #C56B2E;
+  --color-saffron-500: #D97F42;
+  --color-saffron-100: #F7E8D9;
+
+  --color-cream-50:  #F7F4EF;
+  --color-cream-100: #EDE8DE;
+  --color-paper:     #FFFFFF;
+
+  --color-ink-900:   #1A1614;
+  --color-ink-700:   #443C36;
+  --color-ink-500:   #7A6E63;
+  --color-ink-300:   #C9BFB4;
+
+  --color-line:      #E5DDD1;
+
+  /* Semantic */
+  --color-risk-critical: #A3372E;
+  --color-risk-high:     #C25B2E;
+  --color-risk-medium:   #B58A2E;
+  --color-risk-low:      #4A7A4E;
+
+  /* Trust badges */
+  --color-trust-digilocker: #1F5CA8;
+  --color-trust-portal:     #3E5F8A;
+  --color-trust-ai:         #6B4A8F;
+  --color-trust-simulated:  #8A7F73;
+
+  /* Mode B — Bloomberg Terminal */
+  --color-terminal-bg:      #0C0F14;
+  --color-terminal-panel:   #131820;
+  --color-terminal-line:    #232B38;
+  --color-terminal-text:    #D4CDBF;
+  --color-terminal-dim:     #7A7268;
+  --color-terminal-accent:  #E8B15C;
+  --color-terminal-flag:    #E86D5C;
+  --color-terminal-verify:  #7CB37C;
+
+  /* Typography */
+  --font-ui:      'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Fraunces', 'Source Serif Pro', Georgia, serif;
+  --font-mono:    'JetBrains Mono', 'IBM Plex Mono', ui-monospace, monospace;
+  --font-hindi:   'Noto Sans Devanagari', 'Inter', sans-serif;
+
+  --text-display: 2.5rem;
+  --text-h1:      2.125rem;
+  --text-h2:      1.75rem;
+  --text-h3:      1.375rem;
+  --text-body:    1.0625rem;
+  --text-small:   0.9375rem;
+  --text-micro:   0.875rem;
+
+  --leading-tight:  1.3;
+  --leading-normal: 1.55;
+  --leading-hindi:  1.65;
+
+  --weight-regular:  400;
+  --weight-medium:   500;
+  --weight-semibold: 600;
+  --weight-bold:     700;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+
+  /* Elevation */
+  --shadow-sm: 0 1px 2px 0 rgba(26, 22, 20, 0.04);
+  --shadow-md: 0 2px 6px -1px rgba(26, 22, 20, 0.06), 0 1px 3px -1px rgba(26, 22, 20, 0.04);
+  --shadow-lg: 0 8px 20px -4px rgba(26, 22, 20, 0.08), 0 4px 8px -2px rgba(26, 22, 20, 0.04);
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Motion */
+  --ease:            cubic-bezier(0.2, 0.8, 0.2, 1);
+  --duration-fast:   120ms;
+  --duration-normal: 180ms;
+  --duration-slow:   280ms;
+}
+
+/* --- Base layer --- */
+@layer base {
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-size: 17.5px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  @media (min-width: 1280px) {
+    html {
+      font-size: 18px;
+    }
+  }
+
+  body {
+    font-family: var(--font-ui);
+    font-size: 1rem;
+    line-height: 1.5;
+    color: var(--color-ink-900);
+    background-color: var(--color-cream-50);
+  }
+
+  /* Devanagari content */
+  [lang='hi'],
+  :lang(hi) {
+    font-family: var(--font-hindi);
+    line-height: 1.65;
+    letter-spacing: 0.005em;
+  }
+
+  /* Monospace IDs and hashes */
+  .font-mono,
+  code,
+  pre {
+    font-family: var(--font-mono);
+  }
+
+  /* Custom focus ring — saffron, not browser default blue */
+  *:focus-visible {
+    outline: 2px solid var(--color-saffron-600);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* Suppress default focus when not keyboard navigating */
+  *:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: var(--weight-semibold);
+    color: var(--color-ink-900);
+    line-height: var(--leading-tight);
+  }
+
+  a {
+    color: var(--color-saffron-600);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
+}
+
+/* --- Utility layer additions --- */
+@layer utilities {
+  /* Indian number format helper class (applied by JS — just visual) */
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Terminal / Mode B scoping */
+  .terminal-mode {
+    background-color: var(--color-terminal-bg);
+    color: var(--color-terminal-text);
+    font-family: var(--font-mono);
+  }
+
+  /* Transition helpers that only allow permitted properties */
+  .transition-color {
+    transition: color var(--duration-normal) var(--ease),
+                background-color var(--duration-normal) var(--ease),
+                border-color var(--duration-normal) var(--ease);
+  }
+
+  .transition-opacity {
+    transition: opacity var(--duration-normal) var(--ease);
+  }
+
+  .transition-transform {
+    transition: transform var(--duration-normal) var(--ease);
+  }
+
+  /* Skeleton pulse — opacity only, no shimmer gradient */
+  .skeleton-pulse {
+    animation: skeleton-pulse 1.5s ease-in-out infinite;
+  }
+
+  @keyframes skeleton-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+}

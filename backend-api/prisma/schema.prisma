@@ -27,6 +27,7 @@ enum TenderStatus {
   draft
   open
   evaluation
+  evaluation_awarded_pending_2nd
   awarded
   closed
 }
@@ -35,7 +36,9 @@ enum ActorType {
   system
   officer
   admin
+  bidder
 }
+
 
 enum LedgerActionType {
   verification_run
@@ -43,6 +46,23 @@ enum LedgerActionType {
   pii_reveal
   config_change
   admin_action
+  award_decision_primary
+  award_decision_secondary
+  verification_expiry_notice
+  fee_transition
+  fee_paid
+  primary_decision
+  secondary_decision
+  badge_awarded
+  collusion_analysis_run
+  delivery_milestone
+  award_closed
+  document_uploaded
+  document_upload_rejected
+  ai_extraction_run
+  cross_check_run
+  signature_verification_run
+  document_deleted
 }
 
 // ─── Models ───────────────────────────────────────────────────────────────────
@@ -60,38 +80,136 @@ model User {
 }
 
 model Tender {
-  id          String       @id @default(uuid())
-  title       String
-  gemTenderId String       @unique @map("gem_tender_id")
-  status      TenderStatus @default(open)
-  createdAt   DateTime     @default(now()) @map("created_at")
-  updatedAt   DateTime     @updatedAt @map("updated_at")
-  bidders     Bidder[]
+  id              String                  @id @default(uuid())
+  title           String
+  gemTenderId     String                  @unique @map("gem_tender_id")
+  status          TenderStatus            @default(open)
+  applicationFee  Decimal                 @default(0) @map("application_fee")
+  feeRefundPolicy String                  @default("refund_on_disqualification_only") @map("fee_refund_policy")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+
+  bidders         Bidder[]
+  awardDecisions  AwardDecision[]
+  feePayments     ApplicationFeePayment[]
 
   @@map("tenders")
 }
 
 model Bidder {
-  id              String    @id @default(uuid())
-  tenderId        String    @map("tender_id")
-  companyName     String    @map("company_name")
-  udyamNumber     String?   @map("udyam_number")
-  gstin           String?
-  pan             String?
-  overallRisk     RiskLevel @map("overall_risk")
-  riskScore       Float     @default(0) @map("risk_score")
+  id                  String                  @id @default(uuid())
+  tenderId            String                  @map("tender_id")
+  companyName         String                  @map("company_name")
+  udyamNumber         String?                 @map("udyam_number")
+  gstin               String?
+  pan                 String?
+  overallRisk         RiskLevel               @map("overall_risk")
+  riskScore           Float                   @default(0) @map("risk_score")
   // ComplianceCheck[] stored as JSONB
-  checks          Json      @default("[]")
+  checks              Json                    @default("[]")
   // OfficerDecision stored as JSONB; nullable until officer acts
-  officerDecision Json?     @map("officer_decision")
-  verifiedAt      DateTime? @map("verified_at")
-  createdAt       DateTime  @default(now()) @map("created_at")
-  updatedAt       DateTime  @updatedAt @map("updated_at")
+  officerDecision     Json?                   @map("officer_decision")
+  verifiedAt          DateTime?               @map("verified_at")
+  primaryReviewerId   String?                 @map("primary_reviewer_id")
+  primaryReviewedAt   DateTime?               @map("primary_reviewed_at")
+  secondaryReviewerId String?                 @map("secondary_reviewer_id")
+  secondaryReviewedAt DateTime?               @map("secondary_reviewed_at")
+  approvalState       String                  @default("pending") @map("approval_state")
+  quotedPrice         Decimal?                @map("quoted_price")
+  submissionIp        String?                 @map("submission_ip")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
 
-  tender        Tender         @relation(fields: [tenderId], references: [id])
-  ledgerEntries LedgerEntry[]
+  tender              Tender                  @relation(fields: [tenderId], references: [id])
+  ledgerEntries       LedgerEntry[]
+  awardDecisions      AwardDecision[]
+  feePayments         ApplicationFeePayment[]
 
+  @@index([tenderId])
+  @@index([approvalState])
+  @@index([quotedPrice])
   @@map("bidders")
+}
+
+model AwardDecision {
+  id                  String              @id @default(uuid())
+  tenderId            String              @map("tender_id")
+  winningBidderId     String              @map("winning_bidder_id")
+  primaryOfficerId    String              @map("primary_officer_id")
+  secondaryOfficerId  String?             @map("secondary_officer_id")
+  justification       String              @db.Text
+  standoutFactors     Json                @default("[]") @map("standout_factors") // [{ factor: string, note: string }]
+  submittedAt         DateTime            @default(now()) @map("submitted_at")
+  finalizedAt         DateTime?           @map("finalized_at")
+
+  tender              Tender              @relation(fields: [tenderId], references: [id], onDelete: Restrict)
+  winningBidder       Bidder              @relation(fields: [winningBidderId], references: [id], onDelete: Restrict)
+  milestones          DeliveryMilestone[]
+
+  @@index([tenderId])
+  @@index([winningBidderId])
+  @@index([primaryOfficerId])
+  @@index([secondaryOfficerId])
+  @@map("award_decisions")
+}
+
+model ApplicationFeePayment {
+  id          String    @id @default(uuid())
+  tenderId    String    @map("tender_id")
+  bidderId    String    @map("bidder_id")
+  amount      Decimal   @default(0)
+  status      String    @default("pending") // 'pending' | 'paid' | 'refunded' | 'forfeited'
+  gatewayRef  String?   @map("gateway_ref") // 'MOCK-PAY-<uuid>'
+  paidAt      DateTime? @map("paid_at")
+  refundedAt  DateTime? @map("refunded_at")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  tender      Tender    @relation(fields: [tenderId], references: [id], onDelete: Cascade)
+  bidder      Bidder    @relation(fields: [bidderId], references: [id], onDelete: Cascade)
+
+  @@unique([tenderId, bidderId])
+  @@index([tenderId])
+  @@index([bidderId])
+  @@index([status])
+  @@map("application_fee_payments")
+}
+
+model BidderProfile {
+  bidderCompanyId    String   @id @map("bidder_company_id") // sha256(pan)
+  displayName        String   @map("display_name")
+  totalBidsSubmitted Int      @default(0) @map("total_bids_submitted")
+  totalBidsWon       Int      @default(0) @map("total_bids_won")
+  totalBidsLost      Int      @default(0) @map("total_bids_lost")
+  onTimeDeliveries   Int      @default(0) @map("on_time_deliveries")
+  lateDeliveries     Int      @default(0) @map("late_deliveries")
+  failedDeliveries   Int      @default(0) @map("failed_deliveries")
+  disqualifications  Int      @default(0) @map("disqualifications")
+  trustScore         Int      @default(50) @map("trust_score") // 0-100, computed
+  badges             Json     @default("[]") // array of BadgeKey
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@index([trustScore])
+  @@map("bidder_profiles")
+}
+
+model DeliveryMilestone {
+  id           String        @id @default(uuid())
+  awardId      String        @map("award_id")
+  label        String        // 'PO_issued' | 'shipped' | 'received' | 'inspected' | 'accepted' | 'payment_released'
+  dueDate      DateTime      @map("due_date")
+  completedAt  DateTime?     @map("completed_at")
+  status       String        @default("pending") // 'pending' | 'on_time' | 'late' | 'missed'
+  proofDocs    Json?         @map("proof_docs")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  award        AwardDecision @relation(fields: [awardId], references: [id], onDelete: Cascade)
+
+  @@index([awardId])
+  @@index([status])
+  @@map("delivery_milestones")
 }
 
 model LedgerEntry {
@@ -106,6 +224,9 @@ model LedgerEntry {
 
   bidder Bidder @relation(fields: [bidderId], references: [id])
 
+  @@index([bidderId])
+  @@index([action])
+  @@index([createdAt])
   @@map("ledger_entries")
 }
 
