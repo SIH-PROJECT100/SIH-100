@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react'
 import { useParams, useNavigate, Link } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Search,
   LayoutList,
@@ -25,9 +25,11 @@ import {
   CheckCircle2,
   Shield,
   Filter,
+  ShieldCheck,
+  Clock,
 } from 'lucide-react'
 import apiClient from '@/lib/apiClient'
-import { formatDate } from '@/lib/dates'
+import { formatDate, formatDateTime } from '@/lib/dates'
 import { LedgerEntryRow } from '@/components/ledger/LedgerEntryRow'
 import type { Tender, Bidder, CollusionDetectionResult } from '@/types'
 
@@ -58,6 +60,7 @@ import {
   Skeleton,
   EmptyState,
   notify,
+  Modal,
 } from '@/components/ui'
 import { BidderDetailDrawer } from '@/components/BidderDetailDrawer'
 import { CartelGraph } from '@/components/CartelGraph'
@@ -69,6 +72,7 @@ export default function TenderDetailPage() {
   const navigate = useNavigate()
   const { user } = useAuth()
   const { t } = useI18n()
+  const queryClient = useQueryClient()
 
   // View state
   const [viewMode, setViewMode] = useState<'table' | 'graph' | 'ledger'>('table')
@@ -144,6 +148,70 @@ export default function TenderDetailPage() {
       return res.data || []
     },
     enabled: !!tenderId,
+  })
+
+  // Fetch Tender Award Decision (Dual-Officer Governance)
+  const { data: awardData } = useQuery<{
+    id: string
+    tenderId: string
+    winningBidderId: string
+    primaryOfficerId: string
+    secondaryOfficerId?: string | null
+    justification: string
+    standoutFactors: Array<{ factor: string; note: string }>
+    submittedAt: string
+    finalizedAt?: string | null
+    winningBidder?: {
+      id: string
+      companyName: string
+      pan?: string
+      gstin?: string
+    }
+  } | null>({
+    queryKey: ['tender-award', tenderId],
+    queryFn: async () => {
+      if (!tenderId) return null
+      try {
+        const res = await apiClient.get<any>(`/tenders/${tenderId}/award`)
+        return res.data || null
+      } catch {
+        return null
+      }
+    },
+    enabled: !!tenderId,
+  })
+
+  // Second Approval State & Dual-Officer Computations
+  const [isSecondApprovalModalOpen, setIsSecondApprovalModalOpen] = useState(false)
+  const isPrimaryOfficer = user?.id === awardData?.primaryOfficerId
+  const canSecondApprove =
+    (user?.role === 'officer' || user?.role === 'admin') &&
+    !!awardData &&
+    !awardData.finalizedAt &&
+    !isPrimaryOfficer
+  const isPendingSecondApproval =
+    tender?.status === 'evaluation_awarded_pending_2nd' && !!awardData && !awardData.finalizedAt
+  const isAwardFinalized = tender?.status === 'awarded' || !!awardData?.finalizedAt
+
+  const secondApprovalMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiClient.post(`/tenders/${tenderId}/award/second-approval`)
+      return res.data
+    },
+    onSuccess: (data: any) => {
+      notify.success('Award Certified & Finalized!', {
+        description: `Stage: Secondary Award Finalized. Ledger ID: ${data?.ledgerId?.slice(0, 8) || ''}... committed.`,
+      })
+      queryClient.invalidateQueries({ queryKey: ['tender', tenderId] })
+      queryClient.invalidateQueries({ queryKey: ['tender-award', tenderId] })
+      queryClient.invalidateQueries({ queryKey: ['tender-ledger', tenderId] })
+      queryClient.invalidateQueries({ queryKey: ['tenders'] })
+      setIsSecondApprovalModalOpen(false)
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.error?.message || err?.message || 'Second approval failed'
+      notify.error('Secondary Approval Failed', { description: msg })
+    },
   })
 
   // Collusion detection query / cache state
@@ -287,7 +355,15 @@ export default function TenderDetailPage() {
           tender ? (
             <div className="flex items-center gap-2">
               <CopyableId id={tender.gemTenderId} label="Tender ID" />
-              <Badge variant="info">Evaluation Phase</Badge>
+              {isAwardFinalized ? (
+                <Badge variant="success">Award Finalized ✓</Badge>
+              ) : isPendingSecondApproval ? (
+                <Badge variant="warning" className="bg-amber-100 text-amber-900 border-amber-300">
+                  Pending 2nd Approval
+                </Badge>
+              ) : (
+                <Badge variant="info">Evaluation Phase</Badge>
+              )}
             </div>
           ) : undefined
         }
@@ -356,15 +432,38 @@ export default function TenderDetailPage() {
               {collusionButtonLabel}
             </Button>
 
-            {/* Award Tender CTA */}
-            <Button
-              variant="primary"
-              size="md"
-              leftIcon={<Award className="w-4 h-4" />}
-              onClick={() => setIsAwardModalOpen(true)}
-            >
-              Award Tender
-            </Button>
+            {/* Award Tender CTA with Dual-Officer State Awareness */}
+            {isAwardFinalized ? (
+              <Badge variant="success" size="md" className="px-3 py-1.5 text-small font-semibold">
+                <CheckCircle2 className="w-4 h-4 mr-1 text-risk-low inline" /> Award Finalized
+              </Badge>
+            ) : isPendingSecondApproval ? (
+              canSecondApprove ? (
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="bg-emerald-700 hover:bg-emerald-800 text-white border-emerald-600 shadow-sm"
+                  leftIcon={<ShieldCheck className="w-4 h-4" />}
+                  onClick={() => setIsSecondApprovalModalOpen(true)}
+                  id="counter-sign-header-btn"
+                >
+                  Counter-Sign Award
+                </Button>
+              ) : (
+                <Badge variant="warning" size="md" className="px-3 py-1.5 text-small font-medium bg-saffron-100 text-saffron-900 border-saffron-300">
+                  <Clock className="w-4 h-4 mr-1 inline" /> Awaiting 2nd Officer
+                </Badge>
+              )
+            ) : (
+              <Button
+                variant="primary"
+                size="md"
+                leftIcon={<Award className="w-4 h-4" />}
+                onClick={() => setIsAwardModalOpen(true)}
+              >
+                Award Tender
+              </Button>
+            )}
           </div>
         }
       />
@@ -409,6 +508,150 @@ export default function TenderDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* ─── Secondary Award Concurrence Banner (4-Eye Governance USP) ────── */}
+      {isPendingSecondApproval && awardData && (
+        <div className="p-5 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-cream-50 border-2 border-amber-500/40 rounded-xl shadow-md flex flex-col gap-4">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-3 border-b border-amber-500/20 pb-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-micro font-mono font-bold tracking-wide uppercase bg-amber-500 text-slate-950 animate-pulse">
+                <Clock className="w-3.5 h-3.5" /> Action Required: 2nd Officer Concurrence
+              </span>
+              <span className="text-small font-bold text-ink-900">
+                Tender Award Stage 1 Complete — Awaiting Secondary Officer Sign-off
+              </span>
+            </div>
+            <span className="text-micro font-mono text-ink-500">
+              Submitted {formatDateTime(awardData.submittedAt)}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Winner Details */}
+            <div className="p-3.5 bg-paper rounded-lg border border-line flex flex-col justify-between">
+              <span className="text-micro text-ink-500 font-medium">Selected Winning Bidder</span>
+              <div className="mt-1">
+                <p className="text-body font-bold text-navy-900 flex items-center gap-1.5">
+                  <Award className="w-4 h-4 text-amber-600 shrink-0" />
+                  {awardData.winningBidder?.companyName || awardData.winningBidderId}
+                </p>
+                <div className="flex items-center gap-2 mt-1.5 text-micro font-mono text-ink-600">
+                  {awardData.winningBidder?.pan && (
+                    <span className="bg-cream-100 px-1.5 py-0.5 rounded border border-line">
+                      PAN: {awardData.winningBidder.pan}
+                    </span>
+                  )}
+                  {awardData.winningBidder?.gstin && (
+                    <span className="bg-cream-100 px-1.5 py-0.5 rounded border border-line">
+                      GST: {awardData.winningBidder.gstin}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Primary Reviewer */}
+            <div className="p-3.5 bg-paper rounded-lg border border-line flex flex-col justify-between">
+              <span className="text-micro text-ink-500 font-medium">Primary Reviewer (Maker)</span>
+              <div className="mt-1">
+                <p className="text-body font-bold text-navy-900 flex items-center gap-1.5">
+                  <Shield className="w-4 h-4 text-navy-800 shrink-0" />
+                  {awardData.primaryOfficerId === 'user-officer-001' ? 'Priya Sharma (Officer 1)' : awardData.primaryOfficerId}
+                </p>
+                <p className="text-micro text-ink-500 mt-1">
+                  Status: <strong className="text-saffron-600">Primary Award Recorded</strong> (Ledger Committed)
+                </p>
+              </div>
+            </div>
+
+            {/* Action Area */}
+            <div className="p-3.5 bg-paper rounded-lg border border-line flex flex-col justify-center gap-2">
+              <span className="text-micro text-ink-500 font-medium">4-Eye Governance Action</span>
+              {canSecondApprove ? (
+                <Button
+                  variant="primary"
+                  size="md"
+                  className="w-full bg-emerald-700 hover:bg-emerald-800 text-white shadow-sm font-semibold flex items-center justify-center gap-2"
+                  leftIcon={<ShieldCheck className="w-4 h-4" />}
+                  onClick={() => setIsSecondApprovalModalOpen(true)}
+                  id="counter-sign-award-btn"
+                >
+                  Review & Counter-Sign Award
+                </Button>
+              ) : isPrimaryOfficer ? (
+                <div className="p-2 bg-amber-50 rounded border border-amber-200 text-micro text-amber-900 leading-tight">
+                  <strong>Self-Review Blocked:</strong> You submitted this award as Primary Officer. An independent second officer must counter-sign.
+                </div>
+              ) : (
+                <div className="p-2 bg-cream-100 rounded border border-line text-micro text-ink-600">
+                  Awaiting secondary officer login to counter-sign.
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Primary Officer Justification & Standout Factors Preview */}
+          <div className="p-3 bg-paper/80 rounded-lg border border-line text-small flex flex-col gap-2">
+            <span className="text-micro font-bold text-ink-700 uppercase tracking-wider">
+              Primary Officer Accountability Justification:
+            </span>
+            <p className="text-small text-ink-800 italic bg-cream-50/60 p-2.5 rounded border border-line/60">
+              "{awardData.justification}"
+            </p>
+
+            {awardData.standoutFactors && awardData.standoutFactors.length > 0 && (
+              <div className="flex items-center gap-2 flex-wrap pt-1">
+                <span className="text-micro font-semibold text-ink-500">Standout Factors:</span>
+                {awardData.standoutFactors.map((f, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-micro bg-cream-100 border border-line text-ink-700"
+                  >
+                    <strong className="text-ink-900">{f.factor}:</strong> {f.note}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ─── Finalized Award Banner ─────────────────────────────────── */}
+      {isAwardFinalized && (
+        <div className="p-4 bg-gradient-to-r from-emerald-950/80 via-emerald-900/60 to-navy-950 text-cream-50 rounded-xl border border-emerald-500/40 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded text-micro font-mono uppercase bg-emerald-500 text-slate-950 font-bold tracking-wider flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Award Certified & Finalized
+              </span>
+              <span className="text-small font-semibold text-emerald-100">
+                GeM Dual-Officer Sign-Off Complete
+              </span>
+            </div>
+            <p className="text-small text-cream-200 mt-0.5">
+              Winner:{' '}
+              <strong className="text-cream-50 font-bold text-body">
+                {awardData?.winningBidder?.companyName || 'Winning Bidder'}
+              </strong>
+            </p>
+            <div className="flex items-center gap-4 text-micro text-cream-300 mt-0.5 flex-wrap">
+              <span>Maker: <strong>{awardData?.primaryOfficerId === 'user-officer-001' ? 'Priya Sharma' : awardData?.primaryOfficerId}</strong> ({formatDate(awardData?.submittedAt)})</span>
+              <span>•</span>
+              <span>Checker: <strong>{awardData?.secondaryOfficerId === 'user-officer-002' ? 'Rajesh Kumar' : awardData?.secondaryOfficerId}</strong> ({formatDate(awardData?.finalizedAt)})</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              type="button"
+              onClick={() => setViewMode('ledger')}
+              className="px-3 py-1.5 bg-emerald-800/80 hover:bg-emerald-700 text-cream-50 text-small rounded-lg border border-emerald-600 font-medium transition-colors flex items-center gap-1.5"
+            >
+              <Shield className="w-4 h-4" /> View Ledger Audit Trail
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ─── Summary KPI Bar ─────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-line rounded-lg border border-line overflow-hidden shadow-xs">
@@ -1132,6 +1375,94 @@ export default function TenderDetailPage() {
         tenderTitle={tender?.title || 'Tender'}
         bidders={bidders}
       />
+
+      {/* ─── Second Approval / Counter-Sign Modal ───────────────────────── */}
+      <Modal
+        isOpen={isSecondApprovalModalOpen}
+        onClose={() => setIsSecondApprovalModalOpen(false)}
+        title="Counter-Sign Tender Award"
+        description={`Secondary Concurrence for ${tender?.title || 'Tender'}`}
+        size="lg"
+        footer={
+          <div className="flex items-center justify-between w-full">
+            <Button
+              variant="secondary"
+              size="md"
+              onClick={() => setIsSecondApprovalModalOpen(false)}
+              disabled={secondApprovalMutation.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              size="md"
+              className="bg-emerald-700 hover:bg-emerald-800 text-white font-semibold flex items-center gap-2"
+              leftIcon={<ShieldCheck className="w-4 h-4" />}
+              isLoading={secondApprovalMutation.isPending}
+              disabled={secondApprovalMutation.isPending}
+              onClick={() => secondApprovalMutation.mutate()}
+              id="confirm-counter-sign-btn"
+            >
+              Confirm Concurrence & Finalize Award
+            </Button>
+          </div>
+        }
+      >
+        <div className="flex flex-col gap-4 text-small">
+          <div className="p-3 bg-cream-50 rounded-lg border border-line flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-emerald-100 border border-emerald-300 flex items-center justify-center shrink-0">
+              <Award className="w-5 h-5 text-emerald-800" />
+            </div>
+            <div>
+              <span className="text-micro text-ink-500 font-medium uppercase tracking-wider">Designated Winning Bidder</span>
+              <p className="text-body font-bold text-navy-900">
+                {awardData?.winningBidder?.companyName || awardData?.winningBidderId}
+              </p>
+            </div>
+          </div>
+
+          <div className="p-3.5 bg-paper rounded-lg border border-line flex flex-col gap-2">
+            <div className="flex items-center justify-between text-micro text-ink-500">
+              <span>Primary Reviewer: <strong>{awardData?.primaryOfficerId === 'user-officer-001' ? 'Priya Sharma (Officer 1)' : awardData?.primaryOfficerId}</strong></span>
+              <span>Submitted: {awardData?.submittedAt ? formatDateTime(awardData.submittedAt) : '—'}</span>
+            </div>
+            <div className="mt-1">
+              <span className="text-micro font-semibold text-ink-700">Accountability Statement:</span>
+              <p className="text-small text-ink-800 italic bg-cream-50 p-2.5 rounded border border-line mt-1">
+                "{awardData?.justification}"
+              </p>
+            </div>
+
+            {awardData?.standoutFactors && awardData.standoutFactors.length > 0 && (
+              <div className="mt-2">
+                <span className="text-micro font-semibold text-ink-700">Standout Factors Evaluated:</span>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-1">
+                  {awardData.standoutFactors.map((f, i) => (
+                    <div key={i} className="p-2 bg-cream-50 rounded border border-line text-micro">
+                      <strong className="text-navy-900">{f.factor}</strong>
+                      <p className="text-ink-600 mt-0.5">{f.note}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Regulatory Declaration */}
+          <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200 text-micro text-emerald-900 flex flex-col gap-1.5">
+            <div className="flex items-center gap-1.5 font-bold">
+              <ShieldCheck className="w-4 h-4 text-emerald-700" />
+              <span>Statutory GeM Dual-Officer Attestation</span>
+            </div>
+            <p className="leading-relaxed">
+              By counter-signing, you certify as Secondary Officer (Checker) that you have independently reviewed the statutory compliance records, cartel detection signals, and qualification findings for this bidder.
+            </p>
+            <p className="font-mono text-[11px] text-emerald-800 mt-0.5">
+              Action will permanently commit an <code className="bg-emerald-100 px-1 py-0.5 rounded font-bold">award_decision_secondary</code> entry to the immutable ledger.
+            </p>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }
