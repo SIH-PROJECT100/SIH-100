@@ -38,6 +38,8 @@ const STATUTORY_SLOTS = [
   { id: 'blacklist', name: 'Blacklist Screening', shortLabel: 'Blacklist', portal: 'GeM Debarment' },
   { id: 'make_in_india', name: 'Make in India', shortLabel: 'MII', portal: 'DPIIT Portal' },
 ] as const
+import { useAuth } from '@/providers/AuthProvider'
+import { useI18n } from '@/providers/I18nProvider'
 import {
   PageHeader,
   Button,
@@ -65,6 +67,8 @@ import { useRateLimitedAction } from '@/hooks/useRateLimitedAction'
 export default function TenderDetailPage() {
   const { tenderId } = useParams<{ tenderId: string }>()
   const navigate = useNavigate()
+  const { user } = useAuth()
+  const { t } = useI18n()
 
   // View state
   const [viewMode, setViewMode] = useState<'table' | 'graph' | 'ledger'>('table')
@@ -210,6 +214,26 @@ export default function TenderDetailPage() {
 
   const pct = (n: number) => (totalBidders > 0 ? Math.round((n / totalBidders) * 100) : 0)
 
+  const makerCheckerStats = useMemo(() => {
+    let dualApproved = 0
+    let makerApproved = 0
+    let disqualified = 0
+    let pending = 0
+
+    for (const b of bidders) {
+      const isDual = !!b.secondaryReviewerId || (b.officerDecision as any)?.stage === 'secondary' || b.approvalState === 'awarded'
+      const isMaker = !isDual && (!!b.primaryReviewerId || (b.officerDecision as any)?.stage === 'primary' || b.officerDecision?.status === 'qualified')
+      const isDisq = b.officerDecision?.status === 'disqualified' || b.approvalState === 'disqualified'
+
+      if (isDual) dualApproved++
+      else if (isMaker) makerApproved++
+      else if (isDisq) disqualified++
+      else pending++
+    }
+
+    return { dualApproved, makerApproved, disqualified, pending }
+  }, [bidders])
+
   const openBidder = (id: string, initialTab: string = 'overview', checkId?: string) => {
     setSelectedBidderId(id)
     setDrawerInitialTab(initialTab)
@@ -344,6 +368,47 @@ export default function TenderDetailPage() {
           </div>
         }
       />
+
+      {/* ─── Sovereign Dual-Officer Maker-Checker Governance Protocol ────── */}
+      <div className="p-4 bg-gradient-to-r from-navy-900 to-navy-800 text-cream-50 rounded-xl border border-navy-700 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <span className="px-2 py-0.5 rounded text-micro font-mono uppercase bg-saffron-500 text-navy-950 font-bold tracking-wider">
+              GeM Rule 14.2 Protocol
+            </span>
+            <span className="text-small font-semibold text-cream-100">
+              {t('makerChecker.title', 'Dual-Officer Maker-Checker Protocol Active')}
+            </span>
+          </div>
+          <p className="text-micro text-cream-300 max-w-2xl leading-relaxed">
+            {t('makerChecker.desc', 'Primary Officer initiates qualification triage; Secondary Officer performs independent concurrence before tender can be awarded.')}
+          </p>
+          <div className="flex items-center gap-3 mt-1 text-micro">
+            <span className="text-cream-300">
+              Logged in as:{' '}
+              <strong className="text-saffron-400">
+                {user?.name || user?.email || 'Officer'}
+              </strong>{' '}
+              ({user?.role === 'officer' ? t('makerChecker.maker', 'Primary Officer (Maker)') : user?.role === 'admin' ? t('makerChecker.checker', 'Secondary Officer (Checker)') : 'Observer View'})
+            </span>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap shrink-0">
+          <div className="px-3 py-1.5 rounded-lg bg-navy-950/70 border border-navy-700 flex flex-col items-center">
+            <span className="text-[10px] text-cream-400 font-medium">Dual Approved</span>
+            <span className="text-body font-mono font-bold text-risk-low">{makerCheckerStats.dualApproved} / {bidders.length}</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-lg bg-navy-950/70 border border-navy-700 flex flex-col items-center">
+            <span className="text-[10px] text-cream-400 font-medium">Maker Approved</span>
+            <span className="text-body font-mono font-bold text-saffron-400">{makerCheckerStats.makerApproved}</span>
+          </div>
+          <div className="px-3 py-1.5 rounded-lg bg-navy-950/70 border border-navy-700 flex flex-col items-center">
+            <span className="text-[10px] text-cream-400 font-medium">Pending Triage</span>
+            <span className="text-body font-mono font-bold text-cream-200">{makerCheckerStats.pending}</span>
+          </div>
+        </div>
+      </div>
 
       {/* ─── Summary KPI Bar ─────────────────────────────────────────── */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-px bg-line rounded-lg border border-line overflow-hidden shadow-xs">
@@ -686,23 +751,61 @@ export default function TenderDetailPage() {
                         </TableCell>
 
                         <TableCell>
-                          <span className="capitalize text-small font-medium text-ink-700">
-                            {b.officerDecision?.status ? (
-                              <Badge
-                                variant={
-                                  b.officerDecision.status === 'qualified'
-                                    ? 'success'
-                                    : b.officerDecision.status === 'disqualified'
-                                    ? 'danger'
-                                    : 'warning'
-                                }
-                              >
-                                {b.officerDecision.status}
-                              </Badge>
-                            ) : (
-                              <Badge variant="default">Pending</Badge>
-                            )}
-                          </span>
+                          {(() => {
+                            const isDualApproved = !!b.secondaryReviewerId || (b.officerDecision as any)?.stage === 'secondary' || b.approvalState === 'awarded'
+                            const isMakerApproved = !isDualApproved && (!!b.primaryReviewerId || (b.officerDecision as any)?.stage === 'primary' || b.officerDecision?.status === 'qualified')
+                            const isDisqualified = b.officerDecision?.status === 'disqualified' || b.approvalState === 'disqualified'
+
+                            if (isDualApproved) {
+                              return (
+                                <div className="flex flex-col gap-0.5">
+                                  <Badge variant="success" className="font-semibold text-[11px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700/60">
+                                    ✓ Dual-Approved (2/2)
+                                  </Badge>
+                                  <span className="text-[10px] text-ink-500 dark:text-cream-400 font-mono">
+                                    Maker &amp; Checker Signed
+                                  </span>
+                                </div>
+                              )
+                            }
+
+                            if (isMakerApproved) {
+                              return (
+                                <div className="flex flex-col gap-0.5">
+                                  <Badge variant="warning" className="font-semibold text-[11px] bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border-amber-300 dark:border-amber-700/60">
+                                    Maker Approved (1/2)
+                                  </Badge>
+                                  <span className="text-[10px] text-amber-700 dark:text-amber-400 font-medium">
+                                    Awaiting Checker Concurrence
+                                  </span>
+                                </div>
+                              )
+                            }
+
+                            if (isDisqualified) {
+                              return (
+                                <div className="flex flex-col gap-0.5">
+                                  <Badge variant="danger" className="font-semibold text-[11px]">
+                                    Disqualified
+                                  </Badge>
+                                  <span className="text-[10px] text-risk-critical">
+                                    Action Recorded in Ledger
+                                  </span>
+                                </div>
+                              )
+                            }
+
+                            return (
+                              <div className="flex flex-col gap-0.5">
+                                <Badge variant="default" className="text-[11px]">
+                                  Pending Review (0/2)
+                                </Badge>
+                                <span className="text-[10px] text-ink-400">
+                                  Ready for Initial Triage
+                                </span>
+                              </div>
+                            )
+                          })()}
                         </TableCell>
 
                         <TableCell className="text-right">

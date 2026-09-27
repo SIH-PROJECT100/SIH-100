@@ -307,7 +307,7 @@ export function GovtFooter() {
               <button
                 type="button"
                 onClick={() => setActiveModal(null)}
-                className="px-4 py-2 bg-navy-900 dark:bg-saffron-600 text-cream-50 text-xs font-semibold rounded-lg hover:opacity-90 transition-opacity"
+                className="px-4 py-2 bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950 text-xs font-bold rounded-lg hover:opacity-90 transition-opacity"
               >
                 Close
               </button>

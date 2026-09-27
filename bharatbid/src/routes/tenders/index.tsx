@@ -14,9 +14,7 @@ import {
   FileText,
   CheckCircle2,
   AlertTriangle,
-  Bell,
   Award,
-  Shield,
   KeyRound,
   ExternalLink,
 } from 'lucide-react'
@@ -47,7 +45,7 @@ export default function TendersPage() {
 
   // Officer Workspace state
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [activeNav, setActiveNav] = useState<'tenders' | 'evaluations' | 'rings' | 'alerts' | 'officer_profile'>('tenders')
+  const [activeNav, setActiveNav] = useState<'tenders' | 'evaluations' | 'rings' | 'officer_profile'>('tenders')
 
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
@@ -178,7 +176,7 @@ export default function TendersPage() {
         {/* Officer Profile Card */}
         <div className="p-2.5 bg-cream-50 dark:bg-[#102649] rounded-xl border border-line dark:border-[#1C3B68] mb-1">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-navy-900 dark:bg-saffron-600 text-cream-50 flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
+            <div className="w-10 h-10 rounded-full bg-navy-900 dark:bg-saffron-500 text-cream-50 dark:text-navy-950 flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
               {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'PO'}
             </div>
             {!sidebarCollapsed && (
@@ -289,46 +287,6 @@ export default function TendersPage() {
           {!sidebarCollapsed && <span>Publish New Tender</span>}
         </Link>
 
-        {/* Section 5: Trust Ledger Audit */}
-        <Link
-          to="/admin/ledger"
-          title="Cryptographic Trust Ledger"
-          className={cn(
-            'flex items-center rounded-lg text-sm font-medium transition-colors',
-            sidebarCollapsed ? 'justify-center p-2.5' : 'gap-2.5 px-3.5 py-2.5',
-            'text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-50 dark:hover:bg-[#102649]'
-          )}
-        >
-          <Shield className="w-5 h-5 text-navy-700 dark:text-sky-400 shrink-0" />
-          {!sidebarCollapsed && <span>Trust Ledger Audit</span>}
-        </Link>
-
-        {/* Section 6: Statutory Notices */}
-        <button
-          type="button"
-          onClick={() => {
-            setActiveNav('alerts')
-            if (sidebarCollapsed) setSidebarCollapsed(false)
-          }}
-          title="Statutory Notices"
-          className={cn(
-            'flex items-center rounded-lg text-sm font-medium transition-colors',
-            sidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5',
-            activeNav === 'alerts'
-              ? 'bg-cream-100 text-navy-900 font-semibold dark:bg-[#152E54] dark:text-white border-l-2 border-saffron-500'
-              : 'text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-50 dark:hover:bg-[#102649]'
-          )}
-        >
-          <span className="flex items-center gap-2.5">
-            <Bell className="w-5 h-5 text-ink-500 dark:text-slate-400" />
-            {!sidebarCollapsed && <span>Notices &amp; Alerts</span>}
-          </span>
-          {!sidebarCollapsed && (
-            <span className="font-mono text-xs text-white bg-risk-critical px-2 py-0.5 rounded-full font-bold">
-              3
-            </span>
-          )}
-        </button>
 
         {/* Section 7: Officer Profile & Standing */}
         <button
@@ -500,7 +458,7 @@ export default function TendersPage() {
             return (
               <Card
                 key={tender.id}
-                className="hover:border-navy-300 hover:shadow-md hover:-translate-y-0.5 transition-all duration-150 flex flex-col justify-between"
+                className="hover:border-navy-300 hover:shadow-md transition-all duration-150 flex flex-col justify-between"
               >
                 <div>
                   <CardHeader className="flex flex-row items-center justify-between pb-3">
@@ -739,57 +697,6 @@ export default function TendersPage() {
           </div>
         )}
 
-        {/* VIEW 4: Statutory Notices & Vigilance Alerts */}
-        {activeNav === 'alerts' && (
-          <div className="flex flex-col gap-6">
-            <PageHeader
-              title="Officer Statutory Notices & Vigilance Alerts"
-              subtitle="Real-time compliance alerts, statutory filing status changes, and maker-checker concurrence requests"
-              breadcrumbs={[{ label: 'BharatBid', href: '/tenders' }, { label: 'Alerts & Notices' }]}
-            />
-
-            <div className="flex flex-col gap-3">
-              <div className="p-4 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs flex items-start gap-3.5">
-                <CheckCircle2 className="w-5 h-5 text-risk-low dark:text-emerald-400 shrink-0 mt-0.5" />
-                <div className="flex flex-col gap-1 text-xs">
-                  <span className="font-bold text-sm text-ink-900 dark:text-[#F8FAFC]">
-                    Udyam MSME Exemption Confirmed · Ananya Enterprises
-                  </span>
-                  <p className="text-ink-600 dark:text-slate-300">
-                    Statutory cross-check against Ministry of MSME database passed with 98% confidence score. EMD fee waived automatically for Tender GEM/2026/B/88219.
-                  </p>
-                  <span className="text-micro font-mono text-ink-500 dark:text-slate-400">Timestamp: 25 Sep 2026, 14:22 IST</span>
-                </div>
-              </div>
-
-              <div className="p-4 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs flex items-start gap-3.5">
-                <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div className="flex flex-col gap-1 text-xs">
-                  <span className="font-bold text-sm text-amber-900 dark:text-amber-200">
-                    Secondary Concurrence Request Pending · Ministry of Defence Tender
-                  </span>
-                  <p className="text-amber-800 dark:text-amber-300">
-                    Evaluation completed by Officer Ramesh Sharma (L1). Pending secondary officer concurrence before digital signing and award issuance.
-                  </p>
-                  <span className="text-micro font-mono text-ink-500 dark:text-slate-400">Timestamp: 25 Sep 2026, 11:05 IST</span>
-                </div>
-              </div>
-
-              <div className="p-4 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs flex items-start gap-3.5">
-                <ShieldCheck className="w-5 h-5 text-navy-700 dark:text-sky-400 shrink-0 mt-0.5" />
-                <div className="flex flex-col gap-1 text-xs">
-                  <span className="font-bold text-sm text-ink-900 dark:text-[#F8FAFC]">
-                    Trust Ledger Merkle Root Re-Anchored
-                  </span>
-                  <p className="text-ink-600 dark:text-slate-300">
-                    Periodic SHA-256 cryptographic chain integrity verified with 0 discrepancies across 156 immutable audit events.
-                  </p>
-                  <span className="text-micro font-mono text-ink-500 dark:text-slate-400">Timestamp: 25 Sep 2026, 09:00 IST</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* VIEW 5: Officer Profile & Standing */}
         {activeNav === 'officer_profile' && (
@@ -804,7 +711,7 @@ export default function TendersPage() {
               {/* Profile Card */}
               <div className="p-6 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs flex flex-col gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-navy-900 dark:bg-saffron-600 text-cream-50 flex items-center justify-center font-bold text-xl shadow-md">
+                  <div className="w-16 h-16 rounded-full bg-navy-900 dark:bg-saffron-500 text-cream-50 dark:text-navy-950 flex items-center justify-center font-bold text-xl shadow-md">
                     {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'PO'}
                   </div>
                   <div>
@@ -865,11 +772,6 @@ export default function TendersPage() {
                     <ShieldCheck className="w-4 h-4" />
                     <span>PostgreSQL Trigger Immutability Verified</span>
                   </span>
-                  <Link to="/admin/ledger">
-                    <Button variant="secondary" size="sm">
-                      Inspect My Ledger Records
-                    </Button>
-                  </Link>
                 </div>
               </div>
             </div>
