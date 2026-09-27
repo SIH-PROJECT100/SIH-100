@@ -7,7 +7,7 @@ import { Logo } from '@/components/Logo'
 import { Button, Input, LanguageToggle } from '@/components/ui'
 import type { AuthResponse } from '@/types'
 import { toast } from 'sonner'
-import { Lock, Mail, Shield, UserCheck, Briefcase } from 'lucide-react'
+import { Lock, Mail, Shield, UserCheck, Briefcase, Sun, Moon } from 'lucide-react'
 
 // Demo credentials
 const DEMO_USERS = {
@@ -21,6 +21,24 @@ export default function LoginPage() {
   const { login, isAuthenticated, user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+
+  // Dark Mode State
+  const [isDark, setIsDark] = useState<boolean>(() => {
+    return (
+      localStorage.getItem('bharatbid_theme') === 'dark' ||
+      document.documentElement.classList.contains('dark')
+    )
+  })
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark')
+      localStorage.setItem('bharatbid_theme', 'dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+      localStorage.setItem('bharatbid_theme', 'light')
+    }
+  }, [isDark])
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -84,63 +102,66 @@ export default function LoginPage() {
     : t('login.submit', 'Sign In to Portal')
 
   return (
-    <div className="min-h-screen flex bg-cream-50 relative">
+    <div className="min-h-screen flex bg-cream-50 dark:bg-[#071324] text-ink-900 dark:text-[#F8FAFC] relative transition-colors">
       {/* ─── Left Sovereign Panel (45%) ───────────────────────────────── */}
-      <div className="hidden md:flex md:w-5/12 lg:w-1/2 bg-cream-100 flex-col items-center justify-between p-12 lg:p-16 relative overflow-hidden border-r border-line">
-        <div className="w-full flex justify-start">
-          <span className="text-xs font-mono uppercase tracking-wider text-ink-600 font-semibold bg-paper/80 px-3 py-1 rounded-md border border-line">
-            SMART INDIA HACKATHON 2026 · PS-100
-          </span>
-        </div>
-
+      <div className="hidden md:flex md:w-5/12 lg:w-1/2 bg-cream-100 dark:bg-[#0B1B34] flex-col items-center justify-between p-12 lg:p-16 relative overflow-hidden border-r border-line dark:border-[#1C3B68] transition-colors">
         <div className="relative z-10 text-center flex flex-col items-center max-w-lg my-auto">
           <Logo size={64} />
           <h2
-            className="mt-6 text-3xl lg:text-4xl font-bold text-navy-900 leading-tight"
+            className="mt-6 text-3xl lg:text-4xl font-bold text-navy-900 dark:text-cream-50 leading-tight"
             style={{ fontFamily: 'var(--font-display)' }}
           >
             {locale === 'hi'
               ? 'जीईएम बोली अनुपालन एवं ट्रस्ट लेजर'
               : 'Sovereign GeM Bid Compliance & Trust Ledger'}
           </h2>
-          <p className="mt-4 text-ink-700 text-base lg:text-lg leading-relaxed">
+          <p className="mt-4 text-ink-800 dark:text-slate-200 text-base lg:text-lg leading-relaxed">
             {locale === 'hi'
               ? 'जीएसटी, एमएसएमई एवं एमसीए डेटा का वास्तविक समय सत्यापन, ग्राफ कार्टेल जांच एवं क्रिप्टोग्राफिक ऑडिट ट्रेल।'
-              : 'Immutable cross-checking of GST, MSME, and MCA data with graph collusion detection and cryptographic proof generation.'}
+              : 'Cross-checking of GST, MSME, and MCA data with graph collusion detection and cryptographic proof generation.'}
           </p>
 
-          <div className="mt-6 pt-5 border-t border-line/80 w-full text-ink-700 text-sm">
-            <span className="font-semibold text-navy-900">
+          <div className="mt-6 pt-5 border-t border-line/80 dark:border-[#1C3B68] w-full text-sm">
+            <span className="font-semibold text-navy-950 dark:text-cream-100 text-base leading-snug block">
               {t('app.tagline', 'Trust Ledger for GeM procurement — verification, evidence, and decisions in one place.')}
             </span>
           </div>
         </div>
 
-        <div className="w-full flex items-center justify-between text-ink-600 text-xs font-medium border-t border-line pt-4">
-          <span>Smart India Hackathon 2026</span>
-          <span className="font-mono bg-paper px-2 py-0.5 rounded border border-line">PS-100</span>
+        <div className="w-full flex items-center justify-between text-ink-700 dark:text-slate-300 text-xs font-medium border-t border-line dark:border-[#1C3B68] pt-4">
+          <span>Government of India · GeM Procurement</span>
+          <span className="font-mono font-semibold bg-paper dark:bg-[#102649] text-navy-900 dark:text-cream-100 px-2 py-0.5 rounded border border-line dark:border-[#1C3B68]">Verified Portal</span>
         </div>
       </div>
 
       {/* ─── Right Form Panel (55%) ──────────────────────────────────── */}
       <div className="flex-1 flex flex-col items-center justify-center p-6 sm:p-12 lg:p-16 relative">
-        {/* Language toggle top right */}
-        <div className="absolute top-6 right-6">
+        {/* Language & Dark Mode toggle top right */}
+        <div className="absolute top-6 right-6 flex items-center gap-2">
           <LanguageToggle />
+          <button
+            type="button"
+            onClick={() => setIsDark(!isDark)}
+            className="p-2 rounded-lg text-ink-700 dark:text-slate-200 hover:bg-cream-100 dark:hover:bg-[#102649] border border-line dark:border-[#1C3B68] transition-colors"
+            title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+            aria-label="Toggle Dark Mode"
+          >
+            {isDark ? <Sun className="w-4.5 h-4.5 text-amber-400" /> : <Moon className="w-4.5 h-4.5 text-navy-800" />}
+          </button>
         </div>
 
         {/* Mobile top banner */}
         <div className="md:hidden mb-8 text-center">
           <Logo size={48} />
-          <p className="text-base text-ink-600 mt-2 font-medium">GeM Bid Compliance Portal</p>
+          <p className="text-base text-ink-600 dark:text-slate-400 mt-2 font-medium">GeM Bid Compliance Portal</p>
         </div>
 
         <div className="w-full max-w-md lg:max-w-lg flex flex-col gap-7">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-bold text-ink-900 tracking-tight">
+            <h1 className="text-3xl lg:text-4xl font-bold text-ink-900 dark:text-[#F8FAFC] tracking-tight">
               {t('login.title', 'Sign In to BharatBid')}
             </h1>
-            <p className="text-base text-ink-600 mt-2">
+            <p className="text-base text-ink-600 dark:text-slate-400 mt-2">
               {t(
                 'login.subtitle',
                 'Select a demo profile or enter your authorized credentials'
@@ -149,8 +170,8 @@ export default function LoginPage() {
           </div>
 
           {/* Quick Demo Autofill Buttons */}
-          <div className="flex flex-col gap-3 p-4 bg-paper rounded-xl border border-line shadow-xs">
-            <span className="text-xs font-semibold text-ink-600 uppercase tracking-wider">
+          <div className="flex flex-col gap-3 p-4 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs">
+            <span className="text-xs font-semibold text-ink-600 dark:text-slate-400 uppercase tracking-wider">
               {t('login.demo.title', 'One-Click Demo Profiles:')}
             </span>
             <div className="grid grid-cols-3 gap-2.5">
@@ -158,8 +179,8 @@ export default function LoginPage() {
                 variant="secondary"
                 size="md"
                 onClick={() => fillDemo('officer')}
-                leftIcon={<Shield className="w-5 h-5 text-navy-900" />}
-                className="py-2.5 text-sm font-semibold"
+                leftIcon={<Shield className="w-5 h-5 text-navy-900 dark:text-saffron-400" />}
+                className="py-2.5 text-sm font-semibold dark:bg-[#102649] dark:text-slate-100 dark:border-[#1C3B68] dark:hover:bg-[#152E54]"
                 id="demo-officer-btn"
               >
                 {t('login.demo.officer', 'Officer')}
@@ -168,8 +189,8 @@ export default function LoginPage() {
                 variant="secondary"
                 size="md"
                 onClick={() => fillDemo('admin')}
-                leftIcon={<UserCheck className="w-5 h-5 text-navy-900" />}
-                className="py-2.5 text-sm font-semibold"
+                leftIcon={<UserCheck className="w-5 h-5 text-navy-900 dark:text-saffron-400" />}
+                className="py-2.5 text-sm font-semibold dark:bg-[#102649] dark:text-slate-100 dark:border-[#1C3B68] dark:hover:bg-[#152E54]"
                 id="demo-admin-btn"
               >
                 {t('login.demo.admin', 'Admin')}
@@ -178,8 +199,8 @@ export default function LoginPage() {
                 variant="secondary"
                 size="md"
                 onClick={() => fillDemo('bidder')}
-                leftIcon={<Briefcase className="w-5 h-5 text-navy-900" />}
-                className="py-2.5 text-sm font-semibold"
+                leftIcon={<Briefcase className="w-5 h-5 text-navy-900 dark:text-saffron-400" />}
+                className="py-2.5 text-sm font-semibold dark:bg-[#102649] dark:text-slate-100 dark:border-[#1C3B68] dark:hover:bg-[#152E54]"
                 id="demo-bidder-btn"
               >
                 {t('login.demo.bidder', 'Bidder')}

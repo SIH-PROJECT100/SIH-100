@@ -8,6 +8,7 @@ import { appendLedgerEntry } from '../services/ledger.js';
 import { UPLOAD_RULES, checkMagicBytes } from '../config/uploadRules.js';
 import { VERIFICATION_MODES } from '../config/verificationModes.js';
 import { verifyDocumentSignature } from '../verification/signatureVerify.js';
+import { startVerificationPipeline, getVerificationStatus } from '../services/verificationPipeline.js';
 
 const router = Router();
 
@@ -187,18 +188,22 @@ async function runAsyncVerificationPipeline(
         model: 'gemini-2.5-flash',
       });
 
-      await appendLedgerEntry({
-        bidderId,
-        actorType: 'system',
-        actorId: 'gemini-2.5-flash',
-        action: 'ai_extraction_run',
-        detail: {
-          docType,
-          extractedFields,
-          confidence,
-          model: 'gemini-2.5-flash',
-        },
-      });
+      try {
+        await appendLedgerEntry({
+          bidderId,
+          actorType: 'system',
+          actorId: 'gemini-2.5-flash',
+          action: 'ai_extraction_run',
+          detail: {
+            docType,
+            extractedFields,
+            confidence,
+            model: 'gemini-2.5-flash',
+          },
+        });
+      } catch (ledgerErr: any) {
+        console.warn('[Uploads] Warning: AI extraction ledger append failed:', ledgerErr?.message || ledgerErr);
+      }
 
       // Stage: cross_check
       if (mode.stages.includes('cross_check')) {
@@ -210,13 +215,17 @@ async function runAsyncVerificationPipeline(
           ];
           updateStage('cross_check', 'passed', { checks });
 
-          await appendLedgerEntry({
-            bidderId,
-            actorType: 'system',
-            actorId: 'regulatory_engine',
-            action: 'cross_check_run',
-            detail: { docType, checks, verdict: 'passed' },
-          });
+          try {
+            await appendLedgerEntry({
+              bidderId,
+              actorType: 'system',
+              actorId: 'regulatory_engine',
+              action: 'cross_check_run',
+              detail: { docType, checks, verdict: 'passed' },
+            });
+          } catch (ledgerErr: any) {
+            console.warn('[Uploads] Warning: Cross check ledger append failed:', ledgerErr?.message || ledgerErr);
+          }
 
           // Stage: portal_verification
           if (mode.stages.includes('portal_verification')) {
@@ -263,10 +272,19 @@ async function runAsyncVerificationPipeline(
   }, 800);
 }
 
+const optionalAuthenticate = (req: Request, res: Response, next: NextFunction) => {
+  const authHeader = req.headers.authorization;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    authenticate(req, res, next);
+  } else {
+    next();
+  }
+};
+
 // POST /uploads — multipart upload with docType validation and progressive verification
 router.post(
   '/',
-  authenticate,
+  optionalAuthenticate,
   upload.single('file'),
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
@@ -426,6 +444,15 @@ router.post(
         console.warn('[Uploads] Warning: Ledger entry append failed:', ledgerErr?.message || ledgerErr);
       }
 
+      // Start verification pipeline (Fix 39)
+      const { initialState } = await startVerificationPipeline(
+        uploadId,
+        req.file.originalname,
+        docType,
+        bidderId,
+        req.file.buffer
+      );
+
       // Start async progressive verification pipeline (Fix 26, 30, 31)
       runAsyncVerificationPipeline(uploadId, docType, req.file.buffer, bidderId, sha256, req.file.size);
 
@@ -433,10 +460,12 @@ router.post(
         data: {
           uploadId,
           url: `/uploads/${uploadId}`,
+          filename: req.file.originalname,
           sha256,
           docType,
           originalName: req.file.originalname,
           sizeBytes: req.file.size,
+          pipeline: initialState,
           overallStatus: 'in_progress',
         },
         error: null,
@@ -447,15 +476,22 @@ router.post(
   }
 );
 
-// GET /uploads/:uploadId/verification-status — polling endpoint for progressive stepper (Fix 26)
+// GET /uploads/:uploadId/verification-status — polling endpoint for progressive stepper (Fix 26 & Fix 39)
 router.get(
   '/:uploadId/verification-status',
-  authenticate,
   async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const { uploadId } = req.params;
-      const statusRecord = verificationRegistry.get(uploadId);
+      const pipelineRecord = getVerificationStatus(uploadId);
+      if (pipelineRecord) {
+        res.status(200).json({
+          data: pipelineRecord,
+          error: null,
+        });
+        return;
+      }
 
+      const statusRecord = verificationRegistry.get(uploadId);
       if (statusRecord) {
         res.status(200).json({
           data: statusRecord,
@@ -477,6 +513,7 @@ router.get(
         res.status(200).json({
           data: {
             uploadId,
+            filename: stored.originalName,
             docType: stored.docType,
             stages,
             overallStatus: 'verified',
@@ -489,7 +526,7 @@ router.get(
 
       res.status(404).json({
         data: null,
-        error: { message: 'Upload verification record not found' },
+        error: { code: 'NOT_FOUND', message: 'Upload not found' },
       });
     } catch (err) {
       next(err);

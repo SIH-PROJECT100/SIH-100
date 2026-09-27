@@ -163,12 +163,12 @@ export default function TenderDetailPage() {
       setCollusionData(result)
       const clusterCount = result.clusters?.length || 0
       if (clusterCount > 0) {
-        notify.warning(`Collusion Detected! ${clusterCount} Cartel Cluster identified`, {
-          description: `Analysis corroborated ${result.clusters[0]?.signalsFired.length || 0} signals across ${result.clusters[0]?.bidderIds.length || 0} bidders`,
+        notify.warning(`Suspicious Bidding Ring Detected! ${clusterCount} Group identified`, {
+          description: `Identified ${result.clusters[0]?.signalsFired.length || 0} matching patterns across ${result.clusters[0]?.bidderIds.length || 0} bidders coordinating together`,
         })
         setViewMode('graph')
       } else {
-        notify.success('Anti-collusion scan complete: Zero cartels detected')
+        notify.success('Anti-rigging scan complete: All bidders independent (zero suspicious groups detected)')
       }
       refetchBidders()
     },
@@ -294,7 +294,7 @@ export default function TenderDetailPage() {
                 }`}
               >
                 <Network className="w-4 h-4 text-risk-critical" />
-                <span>Cartel Graph</span>
+                <span>Bidding Ring Map (Collusion Graph)</span>
                 {collusionData?.clusters && collusionData.clusters.length > 0 && (
                   <span className="w-2 h-2 rounded-full bg-risk-critical" />
                 )}

@@ -7,7 +7,7 @@
 
 interface LogoProps {
   /** Height of the logo lockup in pixels. Defaults to 32. */
-  size?: 24 | 32 | 48 | 64
+  size?: 24 | 32 | 48 | 52 | 56 | 64
   /** Show just the monogram without the wordmark */
   markOnly?: boolean
   className?: string
@@ -18,6 +18,8 @@ const SIZES = {
   24: { monogram: 24, fontSize: '14px', gap: '6px', tracking: '-0.02em' },
   32: { monogram: 32, fontSize: '18px', gap: '8px', tracking: '-0.02em' },
   48: { monogram: 48, fontSize: '26px', gap: '12px', tracking: '-0.02em' },
+  52: { monogram: 52, fontSize: '28px', gap: '13px', tracking: '-0.02em' },
+  56: { monogram: 56, fontSize: '30px', gap: '14px', tracking: '-0.02em' },
   64: { monogram: 64, fontSize: '34px', gap: '16px', tracking: '-0.02em' },
 } as const
 

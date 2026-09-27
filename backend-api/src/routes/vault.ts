@@ -19,6 +19,7 @@ import { appendToLedger } from '../services/ledger.js';
 import { computeNextGoals, computeCompanyHash } from '../services/profile/profile.js';
 import { vaultReportLimiter } from '../middleware/rateLimits.js';
 import { uploadRegistry, verificationRegistry } from './uploads.js';
+import { getVerificationStatus } from '../services/verificationPipeline.js';
 
 const router = Router();
 
@@ -708,9 +709,12 @@ router.get('/documents', requireRole('bidder'), async (req: Request, res: Respon
         ? 'itr_document'
         : upload.docType;
 
+      const pRecord = getVerificationStatus(upload.uploadId);
       const vRecord = verificationRegistry.get(upload.uploadId);
-      const isVerified = vRecord?.overallStatus === 'verified';
-      const isFailed = vRecord?.overallStatus === 'failed';
+      const effectiveRecord = pRecord || vRecord;
+      const isVerified = effectiveRecord?.overallStatus === 'verified';
+      const isWarning = effectiveRecord?.overallStatus === 'warning';
+      const isFailed = effectiveRecord?.overallStatus === 'failed';
 
       baseDocs[normalizedType] = {
         docType: normalizedType,
@@ -719,12 +723,16 @@ router.get('/documents', requireRole('bidder'), async (req: Request, res: Respon
         sizeBytes: upload.size,
         sha256: upload.sha256,
         uploadedAt: upload.createdAt,
-        status: isVerified ? 'verified' : isFailed ? 'failed' : 'in_progress',
-        extractedValue: vRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.extractedPan || (isVerified ? baseDocs[normalizedType]?.extractedValue : 'Analyzing...'),
-        confidence: vRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.confidence || (isVerified ? 0.94 : 0.0),
+        status: isVerified ? 'verified' : isWarning ? 'warning' : isFailed ? 'failed' : 'in_progress',
+        extractedValue:
+          effectiveRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.extractedFields?.gstin ||
+          effectiveRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.extractedFields?.pan ||
+          effectiveRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.extractedPan ||
+          (isVerified ? baseDocs[normalizedType]?.extractedValue : 'Analyzing...'),
+        confidence: effectiveRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.confidence || (isVerified ? 0.94 : 0.0),
         uploadId: upload.uploadId,
         url: `/uploads/${upload.uploadId}`,
-        stages: vRecord?.stages || [
+        stages: effectiveRecord?.stages || [
           { stage: 'uploaded', status: 'passed' },
           { stage: 'ai_extraction', status: isVerified ? 'passed' : 'in_progress' },
           { stage: 'cross_check', status: isVerified ? 'passed' : 'pending' },

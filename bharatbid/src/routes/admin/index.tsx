@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   Settings,
@@ -13,6 +13,10 @@ import {
   Save,
   RotateCcw,
   CheckCircle2,
+  Shield,
+  ShieldCheck,
+  FileText,
+  Sliders,
 } from 'lucide-react'
 import apiClient from '@/lib/apiClient'
 import type { RulesConfig } from '@/types'
@@ -185,7 +189,7 @@ export const COMPLIANCE_BADGE_KEYS = [
   { key: 'msme_verified', label: 'MSME Verified', hint: 'Active Udyam registration verified via portal', defaultWeight: 10 },
   { key: 'zero_gst_defaults', label: 'Zero GST Defaults', hint: 'No GST filing defaults in past 24 months', defaultWeight: 15 },
   { key: 'class_1_local_supplier', label: 'Class-1 Local Supplier', hint: 'Make in India ≥ 50% local content', defaultWeight: 10 },
-  { key: 'clean_anti_cartel', label: 'Clean Anti-Cartel Record', hint: 'Never appeared in any cartel cluster > threshold', defaultWeight: 20 },
+  { key: 'clean_anti_cartel', label: 'Clean Bidding Record (No Group Fraud)', hint: 'Never flagged for secret bidding coordination with competitors', defaultWeight: 20 },
   { key: 'first_bid', label: 'First Bid Submitted', hint: 'Verified participation upon first tender submission', defaultWeight: 5 },
   { key: 'five_bids', label: 'Five Bids Milestone', hint: 'Reliable active bidder on GeM platform', defaultWeight: 10 },
   { key: 'ten_bids', label: 'Ten Bids Milestone', hint: 'High-volume qualified supplier', defaultWeight: 15 },
@@ -213,7 +217,6 @@ function ComplianceTab({
 
         {COMPLIANCE_BADGE_KEYS.map(({ key, label, hint, defaultWeight }) => {
           const config = (cfg as any)?.compliance?.[key] ?? { weight: defaultWeight, enabled: true }
-          const weight = config.weight ?? 0
           const enabled = config.enabled ?? true
 
           const handleToggle = async (currentEnabled: boolean) => {
@@ -253,24 +256,7 @@ function ComplianceTab({
 
           return (
             <FieldRow key={key} label={label} hint={hint}>
-              <div className="flex items-center gap-2">
-                <NumericInput
-                  value={weight}
-                  onChange={(v) =>
-                    onChange({
-                      compliance: {
-                        ...((cfg as any)?.compliance || {}),
-                        [key]: {
-                          ...config,
-                          weight: v,
-                        },
-                      },
-                    })
-                  }
-                  min={0}
-                  max={100}
-                  step={1}
-                />
+              <div className="flex items-center">
                 <BoolToggle
                   value={enabled}
                   onChange={() => handleToggle(enabled)}
@@ -1072,7 +1058,45 @@ export default function AdminPage() {
       ) : (
         <div className="flex gap-0 rounded-lg border border-line overflow-hidden shadow-xs bg-paper">
           {/* Left Sidebar Nav */}
-          <aside className="w-52 flex-shrink-0 bg-cream-50 border-r border-line flex flex-col">
+          <aside className="w-56 flex-shrink-0 bg-cream-50 dark:bg-[#0B1B34] border-r border-line dark:border-[#1C3B68] flex flex-col">
+            <div className="p-2.5 border-b border-line dark:border-[#1C3B68] flex flex-col gap-1">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-ink-500 dark:text-slate-400 font-mono px-2 py-0.5">
+                Admin Console
+              </span>
+              <Link
+                to="/admin"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded text-xs font-semibold bg-navy-900 text-white dark:bg-saffron-600 dark:text-white"
+              >
+                <Sliders className="w-3.5 h-3.5" />
+                <span>Policy & Rules</span>
+              </Link>
+              <Link
+                to="/admin/ledger"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded text-xs font-medium text-ink-700 dark:text-slate-300 hover:bg-cream-100 dark:hover:bg-[#152E54] hover:text-navy-900 transition-colors"
+              >
+                <Shield className="w-3.5 h-3.5 text-navy-600 dark:text-sky-400" />
+                <span>Trust Ledger</span>
+              </Link>
+              <Link
+                to="/admin/security-test"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded text-xs font-medium text-ink-700 dark:text-slate-300 hover:bg-cream-100 dark:hover:bg-[#152E54] hover:text-navy-900 transition-colors"
+              >
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                <span>Immutability Proof</span>
+              </Link>
+              <Link
+                to="/tenders"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded text-xs font-medium text-ink-700 dark:text-slate-300 hover:bg-cream-100 dark:hover:bg-[#152E54] hover:text-navy-900 transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5 text-ink-500 dark:text-slate-400" />
+                <span>All Tenders</span>
+              </Link>
+            </div>
+            <div className="px-3 py-1.5 bg-cream-100/60 dark:bg-[#102649] border-b border-line dark:border-[#1C3B68]">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-ink-500 dark:text-slate-400 font-mono">
+                Configuration Sections
+              </span>
+            </div>
             {TABS.map(({ id, label, icon: Icon }) => (
               <button
                 key={id}

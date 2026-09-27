@@ -725,7 +725,7 @@ function FileUploadZone({
               <div>
                 <div className="text-small font-medium text-navy-900">{currentUpload.file.name}</div>
                 <div className="text-micro text-ink-500 font-mono">
-                  {(currentUpload.file.size / 1024).toFixed(1)} KB · {currentUpload.status.toUpperCase()}
+                  {(currentUpload.file.size / 1024).toFixed(1)} KB · {(currentUpload.status || 'PENDING').toUpperCase()}
                 </div>
               </div>
             </div>

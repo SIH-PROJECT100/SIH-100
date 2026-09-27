@@ -847,17 +847,31 @@ export function BidderDetailDrawer({
                       </div>
                     </div>
 
-                    {/* Justification Textarea */}
-                    <Textarea
-                      label="Evaluation Justification"
-                      placeholder="Specify the regulatory grounds, compliance check results, and relevant statutory references…"
-                      value={decisionReason}
-                      onChange={(e) => setDecisionReason(e.target.value)}
-                      helperText="Minimum 80 characters recommended for sovereign audit defense"
-                      showCharCount
-                      maxLength={1000}
-                      required
-                    />
+                    {/* Justification Textarea (Fix 42 Bug 7: Enforce 80 characters hard minimum) */}
+                    {(() => {
+                      const len = decisionReason.trim().length;
+                      const needed = Math.max(0, 80 - len);
+                      return (
+                        <div className="flex flex-col gap-1.5">
+                          <Textarea
+                            label="Evaluation Justification"
+                            placeholder="Specify the regulatory grounds, compliance check results, and relevant statutory references…"
+                            value={decisionReason}
+                            onChange={(e) => setDecisionReason(e.target.value)}
+                            showCharCount
+                            maxLength={1000}
+                            required
+                          />
+                          <p className={`text-micro flex items-center gap-1 font-medium ${needed > 0 ? 'text-amber-700 dark:text-amber-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                            {needed > 0 ? (
+                              <span>Minimum 80 characters required — <strong>{needed} more needed</strong> for sovereign audit defense</span>
+                            ) : (
+                              <span>✓ Minimum 80 characters requirement met ({len} characters entered)</span>
+                            )}
+                          </p>
+                        </div>
+                      );
+                    })()}
 
                     {/* Consequence Warning Box */}
                     <div className="p-3 rounded-md bg-cream-100/70 border border-line text-micro text-ink-700 leading-relaxed">
@@ -870,7 +884,9 @@ export function BidderDetailDrawer({
                       variant={selectedStatus === 'disqualified' ? 'destructive' : 'primary'}
                       size="lg"
                       onClick={() => setIsDecisionConfirmOpen(true)}
-                      disabled={!decisionReason.trim()}
+                      disabled={decisionReason.trim().length < 80}
+                      className={decisionReason.trim().length < 80 ? 'opacity-50 cursor-not-allowed' : ''}
+                      title={decisionReason.trim().length < 80 ? `Minimum 80 characters required (${80 - decisionReason.trim().length} more needed)` : 'Commit decision to immutable ledger'}
                     >
                       Commit Decision to Ledger
                     </Button>
