@@ -55,3 +55,4 @@ backend-api/docs/
 backend-api/src/docs/
 ANTIGRAVITY_*.md
 BACKEND_BUILD_PLAYBOOK*.md
+.pgdata/

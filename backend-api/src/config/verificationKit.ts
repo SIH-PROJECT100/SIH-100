@@ -10,7 +10,7 @@ export interface StageResult {
 
 export interface DemoPdfOutcome {
   filename: string;
-  docType: 'pan_card' | 'gst_certificate' | 'oem_authorization';
+  docType: 'pan_card' | 'gst_certificate' | 'oem_authorization' | 'udyam_certificate' | 'itr_document' | string;
   bidderTag: 'A' | 'B' | 'C';
   stages: StageResult[];
   overallStatus: 'verified' | 'warning' | 'failed' | 'human_review';
@@ -291,7 +291,7 @@ export const DEMO_PDF_OUTCOMES: Record<string, DemoPdfOutcome> = {
   },
   'Udyam_Registration_Certificate_UDYAM-MH-01-00892.pdf': {
     filename: 'Udyam_Registration_Certificate_UDYAM-MH-01-00892.pdf',
-    docType: 'pan_card',
+    docType: 'udyam_certificate',
     bidderTag: 'A',
     overallStatus: 'verified',
     stages: [
@@ -330,7 +330,7 @@ export const DEMO_PDF_OUTCOMES: Record<string, DemoPdfOutcome> = {
   },
   'sample_udyam_signed_digilocker.xml': {
     filename: 'sample_udyam_signed_digilocker.xml',
-    docType: 'pan_card',
+    docType: 'udyam_certificate',
     bidderTag: 'A',
     overallStatus: 'verified',
     stages: [
@@ -363,7 +363,7 @@ export const DEMO_PDF_OUTCOMES: Record<string, DemoPdfOutcome> = {
   },
   'ITR_V_Acknowledgement_AY2024-25.pdf': {
     filename: 'ITR_V_Acknowledgement_AY2024-25.pdf',
-    docType: 'pan_card',
+    docType: 'itr_document',
     bidderTag: 'A',
     overallStatus: 'verified',
     stages: [
@@ -401,9 +401,44 @@ export const DEMO_PDF_OUTCOMES: Record<string, DemoPdfOutcome> = {
       { stage: 'officer_review', status: 'not_applicable', detail: { required: false } },
     ],
   },
+  'sample_itr_unsigned.pdf': {
+    filename: 'sample_itr_unsigned.pdf',
+    docType: 'itr_document',
+    bidderTag: 'A',
+    overallStatus: 'verified',
+    stages: [
+      { stage: 'uploaded', status: 'passed', detail: { filename: 'sample_itr_unsigned.pdf', fileSizeBytes: 4091 } },
+      { stage: 'signature_verification', status: 'passed', detail: {
+        hasSignature: false, verified: true,
+        signerName: 'Statutory Self-Declaration / Acknowledgement',
+        message: 'Direct taxes e-filing acknowledgement verified via CPC acknowledgement barcode.',
+      }},
+      { stage: 'ai_extraction', status: 'passed', detail: {
+        extractedFields: {
+          pan: 'AAWBS9999P',
+          name: 'Ananya Enterprises Pvt Ltd',
+          ack_number: '981245012849102',
+          assessment_year: '2024-25',
+          gross_income: 24000000,
+        },
+        confidence: 0.95, model: 'gemini-2.5-flash',
+        summary: 'ITR acknowledgement verification completed.',
+      }},
+      { stage: 'cross_check', status: 'passed', detail: {
+        checks: [
+          { field: 'pan_match', result: 'match', value: 'AAWBS9999P' },
+          { field: 'entity_name_match', result: 'match', value: 'Ananya Enterprises Pvt Ltd' },
+        ],
+      }},
+      { stage: 'portal_verification', status: 'passed', detail: {
+        source: 'Income Tax Direct Taxes Central System (SIMULATED)', result: 'E-VERIFIED (TIMELY FILING)',
+      }},
+      { stage: 'officer_review', status: 'not_applicable', detail: { required: false } },
+    ],
+  },
   'Debarment_Non_Blacklisting_Declaration.pdf': {
     filename: 'Debarment_Non_Blacklisting_Declaration.pdf',
-    docType: 'pan_card',
+    docType: 'oem_authorization',
     bidderTag: 'A',
     overallStatus: 'verified',
     stages: [
@@ -527,23 +562,23 @@ export function getDemoOutcomeForFile(filename: string): DemoPdfOutcome | null {
     if (key.toLowerCase() === lower) return outcome;
   }
 
-  // 4. Fuzzy / prefix match for demo documents
+  // 4. Exact match against known demo files (e.g. AAWBS9999P, 27AAWBS9999P1Z5, UDYAM-MH-01-00892, sample_tampered)
   if (lower.includes('tamper')) {
     return DEMO_PDF_OUTCOMES['sample_tampered.pdf'];
   }
-  if (lower.includes('aawbs9999p') && lower.includes('pan')) {
+  if (lower.includes('aawbs9999p')) {
     return DEMO_PDF_OUTCOMES['PAN_Card_IncomeTax_AAWBS9999P.pdf'];
   }
-  if (lower.includes('27aawbs') || (lower.includes('gst') && lower.includes('certificate'))) {
+  if (lower.includes('27aawbs9999p1z5')) {
     return DEMO_PDF_OUTCOMES['GST_Certificate_27AAWBS9999P1Z5.pdf'];
   }
-  if (lower.includes('udyam') && (lower.includes('00892') || lower.includes('certificate') || lower.includes('sample_udyam'))) {
+  if (lower.includes('udyam-mh-01-00892') || lower.includes('00892')) {
     return DEMO_PDF_OUTCOMES['Udyam_Registration_Certificate_UDYAM-MH-01-00892.pdf'];
   }
-  if (lower.includes('itr') && (lower.includes('2024') || lower.includes('acknowledgement'))) {
+  if (lower.includes('ay2024-25') || lower.includes('itr_v_acknowledgement')) {
     return DEMO_PDF_OUTCOMES['ITR_V_Acknowledgement_AY2024-25.pdf'];
   }
-  if (lower.includes('debarment') || lower.includes('blacklisting')) {
+  if (lower.includes('debarment_non_blacklisting')) {
     return DEMO_PDF_OUTCOMES['Debarment_Non_Blacklisting_Declaration.pdf'];
   }
 

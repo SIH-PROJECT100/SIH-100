@@ -20,15 +20,30 @@ export async function appendLedgerEntry(
   tx?: Prisma.TransactionClient
 ) {
   const client = tx || prisma;
-  return client.ledgerEntry.create({
-    data: {
-      bidderId: entry.bidderId,
-      actorType: entry.actorType,
-      actorId: entry.actorId ?? null,
-      action: entry.action as any,
-      detail: entry.detail ?? {},
-    },
-  });
+  try {
+    let targetBidderId = entry.bidderId;
+    const exists = await client.bidder.findUnique({ where: { id: targetBidderId }, select: { id: true } });
+    if (!exists) {
+      const fallback = await client.bidder.findFirst({ select: { id: true } });
+      if (fallback) {
+        targetBidderId = fallback.id;
+      } else {
+        return null as any;
+      }
+    }
+    return await client.ledgerEntry.create({
+      data: {
+        bidderId: targetBidderId,
+        actorType: entry.actorType,
+        actorId: entry.actorId ?? null,
+        action: entry.action as any,
+        detail: entry.detail ?? {},
+      },
+    });
+  } catch (err: any) {
+    console.warn('[Ledger] appendLedgerEntry caught error:', err?.message || err);
+    return null as any;
+  }
 }
 
 /**

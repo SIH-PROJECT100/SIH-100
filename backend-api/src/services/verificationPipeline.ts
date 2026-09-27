@@ -20,40 +20,35 @@ export async function startVerificationPipeline(
   bidderId: string,
   fileBuffer?: Buffer
 ) {
-  const outcome = getDemoOutcomeForFile(filename);
-
   let stages: any[];
   let overallStatus: string;
 
-  if (outcome) {
-    // Known demo-kit file — deterministic, fast, offline-safe. Use as-is.
-    stages = outcome.stages;
-    overallStatus = outcome.overallStatus ?? 'verified';
-  } else if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '') {
-    // Real file — run ACTUAL Gemini extraction, ACTUAL cross-check, ACTUAL rules.
-    // No hardcoded pass. Whatever the real pipeline determines is what displays.
+  if (fileBuffer && fileBuffer.length > 0) {
+    // ALWAYS run actual statutory extraction, tamper detection, cross-check, and rules on uploaded content!
     const realRes = await runRealVerificationPipeline(
       uploadId,
       filename,
       docType,
-      fileBuffer || Buffer.from(''),
+      fileBuffer,
       bidderId
     );
     stages = realRes.stages;
     overallStatus = realRes.overallStatus;
   } else {
-    // No API key configured — do not fake a result. Say so.
-    stages = [
-      { stage: 'uploaded', status: 'passed', detail: {} },
-      {
-        stage: 'ai_extraction',
-        status: 'failed',
-        detail: {
-          note: 'GEMINI_API_KEY not configured — document cannot be verified. This is not a pass or a fail; verification did not run.',
-        },
-      },
-    ];
-    overallStatus = 'unverified';
+    // Only if fileBuffer is missing/empty, check if it's a known demo fixture
+    const outcome = getDemoOutcomeForFile(filename);
+    if (outcome) {
+      stages = outcome.stages;
+      overallStatus = outcome.overallStatus ?? 'verified';
+    } else {
+      stages = [
+        { stage: 'uploaded', status: 'failed', detail: { error: 'Empty file buffer received' } },
+        { stage: 'ai_extraction', status: 'failed', detail: { error: 'No content to analyze' } },
+        { stage: 'cross_check', status: 'failed', detail: { error: 'Document verification failed' } },
+        { stage: 'portal_verification', status: 'failed', detail: { error: 'Missing document' } },
+      ];
+      overallStatus = 'failed';
+    }
   }
 
   // Initialize state — ONLY first stage marked complete
@@ -87,6 +82,25 @@ export async function startVerificationPipeline(
     if (final) {
       final.overallStatus = overallStatus;
     }
+
+    try {
+      const { verificationRegistry, uploadRegistry, saveRegistry } = await import('../routes/uploads.js');
+      if (final) {
+        verificationRegistry.set(uploadId, {
+          uploadId,
+          docType,
+          stages: final.stages as any,
+          overallStatus: (overallStatus as any) || 'in_progress',
+          verifiedAt: overallStatus === 'verified' ? new Date().toISOString() : null,
+        });
+      }
+      const stored = uploadRegistry.get(uploadId);
+      if (stored) {
+        (stored as any).overallStatus = overallStatus;
+        (stored as any).stages = final?.stages;
+        saveRegistry();
+      }
+    } catch {}
 
     // CRITICAL: also write this to the ledger so Fix 20/21/23 ledger tabs show it.
     await emitLedgerEntriesForPipeline(uploadId, bidderId, stages);
