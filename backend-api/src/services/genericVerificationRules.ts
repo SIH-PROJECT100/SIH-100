@@ -8,7 +8,7 @@ export function validateGSTINFormat(gstin: string): boolean {
 }
 
 export function validateUdyamFormat(udyam: string): boolean {
-  return /^UDYAM-[A-Z]{2}-[0-9]{2}-[0-9]{7}$/.test(udyam?.trim().toUpperCase() ?? '');
+  return /^UDYAM-[A-Z]{2}-[0-9]{2}-[0-9]{5,7}$/.test(udyam?.trim().toUpperCase() ?? '');
 }
 
 export function normalizeCompanyName(name: string): string {

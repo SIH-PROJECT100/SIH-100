@@ -10,9 +10,6 @@ import {
   Moon,
   CheckCircle2,
   AlertTriangle,
-  FileText,
-  Shield,
-  Layers,
 } from 'lucide-react'
 import { Logo } from '@/components/Logo'
 import { LanguageToggle } from '@/components/ui/LanguageToggle'
@@ -50,7 +47,6 @@ export function AppShell() {
 
   // Fetch real notifications for authenticated user
   const isBidder = user?.role === 'bidder'
-  const isOfficer = user?.role === 'officer'
   const isAdmin = user?.role === 'admin'
 
   const { data: alertsList = [] } = useQuery({
@@ -117,61 +113,6 @@ export function AppShell() {
               </div>
             </Link>
 
-            {/* Bidder Global Navigation Links */}
-            {isBidder && (
-              <nav className="hidden md:flex items-center gap-1.5 ml-2 pl-4 border-l border-line dark:border-navy-800">
-                <Link
-                  to="/bidder"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-ink-700 dark:text-cream-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-100 dark:hover:bg-navy-800 transition-colors"
-                >
-                  {t('nav.workspace', 'Workspace')}
-                </Link>
-                <Link
-                  to="/tenders"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-ink-700 dark:text-cream-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-100 dark:hover:bg-navy-800 transition-colors"
-                >
-                  {t('nav.openTenders', 'Open Tenders')}
-                </Link>
-                <Link
-                  to="/bidder/bids"
-                  className="px-3 py-1.5 rounded-lg text-sm font-bold text-navy-950 dark:text-saffron-300 bg-saffron-500/15 dark:bg-saffron-500/20 border border-saffron-500/30 transition-colors flex items-center gap-1.5"
-                >
-                  <FileText className="w-3.5 h-3.5 text-saffron-600 dark:text-saffron-400" />
-                  <span>{t('nav.myBids', 'My Bids')}</span>
-                </Link>
-                <Link
-                  to="/bidder/documents"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-ink-700 dark:text-cream-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-100 dark:hover:bg-navy-800 transition-colors"
-                >
-                  {t('nav.vault', 'Document Vault')}
-                </Link>
-              </nav>
-            )}
-
-            {/* Officer Global Navigation Links */}
-            {isOfficer && (
-              <nav className="hidden md:flex items-center gap-1.5 ml-2 pl-4 border-l border-line dark:border-navy-800">
-                <Link
-                  to="/tenders"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-ink-700 dark:text-cream-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-100 dark:hover:bg-navy-800 transition-colors"
-                >
-                  {t('nav.tenders', 'Tenders & Bids')}
-                </Link>
-                <Link
-                  to="/tenders"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-ink-700 dark:text-cream-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-100 dark:hover:bg-navy-800 transition-colors"
-                >
-                  {t('nav.evaluations', 'Evaluation Desk')}
-                </Link>
-                <Link
-                  to="/admin"
-                  className="px-3 py-1.5 rounded-lg text-sm font-medium text-ink-700 dark:text-cream-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-100 dark:hover:bg-navy-800 transition-colors"
-                >
-                  {t('nav.ledger', 'Trust Ledger')}
-                </Link>
-              </nav>
-            )}
-
             {/* Admin Global Navigation Links */}
             {isAdmin && (
               <nav className="hidden md:flex items-center gap-1.5 ml-2 pl-4 border-l border-line dark:border-navy-800">
@@ -208,7 +149,7 @@ export function AppShell() {
             </button>
 
             {/* Notifications Button */}
-            {isAuthenticated && (
+            {isAuthenticated && isBidder && (
               <div className="relative">
                 <button
                   type="button"

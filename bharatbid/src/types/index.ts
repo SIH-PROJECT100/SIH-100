@@ -129,6 +129,9 @@ export interface Bidder {
   trustScore?: number
   collusionRisk?: boolean
   collusionCluster?: string | null
+  approvalState?: string | null
+  primaryReviewerId?: string | null
+  secondaryReviewerId?: string | null
 }
 
 export interface BidderPII {

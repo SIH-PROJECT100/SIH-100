@@ -7,7 +7,6 @@ import {
   FileText,
   FileCheck2,
   Truck,
-  Bell,
   Settings,
   ShieldCheck,
   Award,
@@ -1661,7 +1660,7 @@ export default function BidderPortalPage() {
                             <span className="font-mono text-micro font-bold text-navy-800 dark:text-saffron-400 bg-cream-100 dark:bg-slate-800 px-2.5 py-0.5 rounded border border-line dark:border-slate-700">
                               {b.tender?.gemTenderId || 'GEM/2026/B/5001235'}
                             </span>
-                            <Badge variant="neutral">Concluded · Debrief Available</Badge>
+                            <Badge variant="default">Concluded · Debrief Available</Badge>
                             <span className="text-micro text-ink-500 font-mono">
                               Date: {formatDate(b.createdAt)}
                             </span>
@@ -1744,7 +1743,7 @@ export default function BidderPortalPage() {
                           <span className="font-mono text-micro font-bold text-navy-800 dark:text-saffron-400 bg-cream-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-line dark:border-slate-700">
                             {b.tender?.gemTenderId || 'GEM/2026/B/5001234'}
                           </span>
-                          <Badge variant={b.approvalState === 'awarded' ? 'success' : 'neutral'}>
+                          <Badge variant={b.approvalState === 'awarded' ? 'success' : 'default'}>
                             {b.approvalState === 'awarded' ? 'Awarded Winner' : b.approvalState === 'pending' ? 'In Review' : 'Concluded'}
                           </Badge>
                         </div>
