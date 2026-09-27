@@ -16,13 +16,13 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    'bg-navy-900 text-paper hover:bg-navy-700 active:bg-navy-900/90 shadow-sm border border-transparent',
+    'bg-navy-900 text-cream-50 hover:bg-navy-800 active:bg-navy-950 shadow-sm border border-transparent dark:bg-saffron-500 dark:text-navy-950 dark:hover:bg-saffron-400 dark:active:bg-saffron-600 font-semibold',
   secondary:
-    'bg-paper text-ink-900 border border-line hover:bg-cream-100 hover:border-ink-300 active:bg-cream-50 shadow-sm',
+    'bg-paper text-ink-900 border border-line hover:bg-cream-100 hover:border-ink-300 active:bg-cream-50 shadow-sm dark:bg-navy-900 dark:text-cream-50 dark:border-navy-700 dark:hover:bg-navy-800 dark:hover:border-navy-600',
   tertiary:
-    'bg-transparent text-ink-700 hover:bg-cream-100 hover:text-ink-900 border border-transparent',
+    'bg-transparent text-ink-700 hover:bg-cream-100 hover:text-ink-900 border border-transparent dark:text-cream-300 dark:hover:bg-navy-800 dark:hover:text-cream-50',
   destructive:
-    'bg-risk-critical text-paper hover:bg-risk-critical/90 active:bg-risk-critical/80 shadow-sm border border-transparent',
+    'bg-risk-critical text-cream-50 hover:bg-risk-critical/90 active:bg-risk-critical/80 shadow-sm border border-transparent dark:bg-red-600 dark:text-white dark:hover:bg-red-500',
 }
 
 const sizeStyles: Record<ButtonSize, string> = {

@@ -178,7 +178,7 @@ export default function TendersPage() {
         {/* Officer Profile Card */}
         <div className="p-2.5 bg-cream-50 dark:bg-[#102649] rounded-xl border border-line dark:border-[#1C3B68] mb-1">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-navy-900 dark:bg-saffron-600 text-cream-50 flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
+            <div className="w-10 h-10 rounded-full bg-navy-900 dark:bg-saffron-500 text-cream-50 dark:text-navy-950 flex items-center justify-center font-bold text-base shrink-0 shadow-xs">
               {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'PO'}
             </div>
             {!sidebarCollapsed && (
@@ -804,7 +804,7 @@ export default function TendersPage() {
               {/* Profile Card */}
               <div className="p-6 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs flex flex-col gap-4">
                 <div className="flex items-center gap-4">
-                  <div className="w-16 h-16 rounded-full bg-navy-900 dark:bg-saffron-600 text-cream-50 flex items-center justify-center font-bold text-xl shadow-md">
+                  <div className="w-16 h-16 rounded-full bg-navy-900 dark:bg-saffron-500 text-cream-50 dark:text-navy-950 flex items-center justify-center font-bold text-xl shadow-md">
                     {user?.name?.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase() || 'PO'}
                   </div>
                   <div>

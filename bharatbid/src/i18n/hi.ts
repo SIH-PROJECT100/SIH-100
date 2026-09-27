@@ -125,4 +125,42 @@ export const HINDI_TRANSLATIONS: Record<string, string> = {
   'trustSource.portal_verified': 'पोर्टल सत्यापित',
   'trustSource.ai_extracted': 'एआई निष्कर्षित',
   'trustSource.simulated': 'सिम्युलेटेड',
+
+  // Navigation additions
+  'nav.workspace': 'कार्यक्षेत्र',
+  'nav.openTenders': 'खुली निविदाएं',
+  'nav.myBids': 'मेरी बोलियां',
+  'nav.vault': 'दस्तावेज़ तिजोरी',
+  'nav.evaluations': 'मूल्यांकन डेस्क',
+
+  // Workspace Metrics
+  'metrics.trustScore': 'विश्वास स्कोर',
+  'metrics.activeBids': 'सक्रिय बोलियां',
+  'metrics.wonAwards': 'जीते गए अनुबंध',
+  'metrics.feesPaid': 'भुगतान किया गया शुल्क',
+  'metrics.compliance': 'सांविधिक अनुपालन',
+  'metrics.deliveryRate': 'आपूर्ति दर',
+  'metrics.alerts': 'सांविधिक सूचनाएं',
+
+  // Bidder subtabs
+  'bidder.tab.activeReview': 'सक्रिय समीक्षा',
+  'bidder.tab.wonAwards': 'जीते गए अनुबंध',
+  'bidder.tab.concluded': 'पूर्व निविदाएं',
+  'bidder.tab.vault': 'सत्यापनीय तिजोरी (पीडीएफ रिपोर्ट)',
+
+  // Maker-Checker Governance
+  'makerChecker.title': 'द्वि-अधिकारी मेकर-चेकर प्रोटोकॉल सक्रिय (GeM नियम 14.2)',
+  'makerChecker.desc': 'प्राथमिक अधिकारी पात्रता जांच प्रारंभ करते हैं; निविदा प्रदान करने से पूर्व द्वितीयक अधिकारी स्वतंत्र सहमति प्रदान करते हैं।',
+  'makerChecker.maker': 'प्राथमिक अधिकारी (मेकर)',
+  'makerChecker.checker': 'द्वितीयक अधिकारी (चेकर)',
+  'makerChecker.dualApproved': 'द्वि-स्वीकृत (2/2)',
+  'makerChecker.makerApproved': 'मेकर स्वीकृत (1/2)',
+  'makerChecker.awaitingChecker': 'चेकर सहमति प्रतीक्षारत',
+  'makerChecker.pendingReview': 'समीक्षा प्रतीक्षारत (0/2)',
+
+  // Notifications
+  'notifications.title': 'सूचनाएं एवं अलर्ट',
+  'notifications.new': 'नई',
+  'notifications.close': 'पैनल बंद करें',
+  'notifications.empty': 'वर्तमान में कोई अपठित सूचना नहीं है।',
 }

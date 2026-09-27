@@ -259,3 +259,13 @@ input[type='number'] {
 .dark .text-ink-500 { color: #94A3B8; }
 .dark .border-line { border-color: #1C3B68; }
 .dark .bg-navy-900\/5 { background-color: rgba(56, 189, 248, 0.12); }
+.dark .text-navy-900:not([class*='dark:text-']) { color: #F8FAFC; }
+
+.dark h1,
+.dark h2,
+.dark h3,
+.dark h4,
+.dark h5,
+.dark h6 {
+  color: #F8FAFC;
+}

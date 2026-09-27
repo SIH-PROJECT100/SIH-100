@@ -9,13 +9,17 @@ const config: Config = {
       colors: {
         // Mode A — Government Formal
         navy: {
+          950: '#071524',
           900: '#0F2942',
+          800: '#163554',
           700: '#1E3A5F',
           100: '#E8EEF4',
         },
         saffron: {
           600: '#C56B2E',
           500: '#D97F42',
+          400: '#E5955E',
+          300: '#EEAA7A',
           100: '#F7E8D9',
         },
         cream: {

@@ -3,12 +3,28 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useUploadWithPolling(docType: string, bidderId: string = 'user-bidder-001') {
   const queryClient = useQueryClient();
-  const [activeUploadId, setActiveUploadId] = useState<string | null>(null);
-  const [lastUploadedFile, setLastUploadedFile] = useState<{
-    name: string;
-    size: number;
-    sha256?: string;
-  } | null>(null);
+  const [uploadsMap, setUploadsMap] = useState<Record<string, {
+    activeUploadId: string | null;
+    lastUploadedFile: {
+      name: string;
+      size: number;
+      sha256?: string;
+    } | null;
+  }>>({});
+
+  const currentUpload = uploadsMap[docType] || { activeUploadId: null, lastUploadedFile: null };
+  const activeUploadId = currentUpload.activeUploadId;
+  const lastUploadedFile = currentUpload.lastUploadedFile;
+
+  const setActiveUploadId = (id: string | null) => {
+    setUploadsMap((prev) => ({
+      ...prev,
+      [docType]: {
+        ...(prev[docType] || { lastUploadedFile: null }),
+        activeUploadId: id,
+      },
+    }));
+  };
 
   const uploadMutation = useMutation({
     mutationFn: async (file: File) => {
@@ -37,12 +53,17 @@ export function useUploadWithPolling(docType: string, bidderId: string = 'user-b
     },
     onSuccess: (result, variables) => {
       const uploadId = result.data.uploadId;
-      setActiveUploadId(uploadId);
-      setLastUploadedFile({
-        name: variables.name,
-        size: variables.size,
-        sha256: result.data.sha256,
-      });
+      setUploadsMap((prev) => ({
+        ...prev,
+        [docType]: {
+          activeUploadId: uploadId,
+          lastUploadedFile: {
+            name: variables.name,
+            size: variables.size,
+            sha256: result.data.sha256,
+          },
+        },
+      }));
       // Immediately prime query cache with initial pipeline state from upload response
       if (result.data.pipeline) {
         queryClient.setQueryData(['uploadStatus', uploadId], {
@@ -56,6 +77,7 @@ export function useUploadWithPolling(docType: string, bidderId: string = 'user-b
   const statusQuery = useQuery({
     queryKey: ['uploadStatus', activeUploadId],
     queryFn: async () => {
+      if (!activeUploadId) return null;
       const res = await fetch(`/api/uploads/${activeUploadId}/verification-status`);
       if (!res.ok) {
         throw new Error('Failed to fetch verification status');

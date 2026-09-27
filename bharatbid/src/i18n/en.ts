@@ -125,4 +125,42 @@ export const ENGLISH_TRANSLATIONS: Record<string, string> = {
   'trustSource.portal_verified': 'Portal Verified',
   'trustSource.ai_extracted': 'AI Extracted',
   'trustSource.simulated': 'Simulated',
+
+  // Navigation additions
+  'nav.workspace': 'Workspace',
+  'nav.openTenders': 'Open Tenders',
+  'nav.myBids': 'My Bids',
+  'nav.vault': 'Document Vault',
+  'nav.evaluations': 'Evaluation Desk',
+
+  // Workspace Metrics
+  'metrics.trustScore': 'Trust Score',
+  'metrics.activeBids': 'Active Bids',
+  'metrics.wonAwards': 'Won Awards',
+  'metrics.feesPaid': 'Fees Paid',
+  'metrics.compliance': 'Compliance',
+  'metrics.deliveryRate': 'Delivery Rate',
+  'metrics.alerts': 'Statutory Alerts',
+
+  // Bidder subtabs
+  'bidder.tab.activeReview': 'Active Review',
+  'bidder.tab.wonAwards': 'Won Awards',
+  'bidder.tab.concluded': 'Past Concluded',
+  'bidder.tab.vault': 'Verifiable Vault (PDF Reports)',
+
+  // Maker-Checker Governance
+  'makerChecker.title': 'Dual-Officer Maker-Checker Protocol Active (GeM Rule 14.2)',
+  'makerChecker.desc': 'Primary Officer initiates qualification triage; Secondary Officer performs independent concurrence before tender can be awarded.',
+  'makerChecker.maker': 'Primary Officer (Maker)',
+  'makerChecker.checker': 'Secondary Officer (Checker)',
+  'makerChecker.dualApproved': 'Dual Approved (2/2)',
+  'makerChecker.makerApproved': 'Maker Approved (1/2)',
+  'makerChecker.awaitingChecker': 'Awaiting Checker Concurrence',
+  'makerChecker.pendingReview': 'Pending Review (0/2)',
+
+  // Notifications
+  'notifications.title': 'Notifications & Alerts',
+  'notifications.new': 'New',
+  'notifications.close': 'Close Panel',
+  'notifications.empty': 'No unread notifications at this time.',
 }

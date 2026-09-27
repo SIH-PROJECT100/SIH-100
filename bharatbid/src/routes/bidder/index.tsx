@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import {
@@ -386,6 +386,35 @@ export default function BidderPortalPage() {
     },
   })
 
+  // Categorized bids for My Bids workspace
+  const activeBids = useMemo(() => {
+    return vaultBids.filter(
+      (b) =>
+        b.approvalState === 'pending' ||
+        b.approvalState === 'under_review' ||
+        b.tender?.status === 'open' ||
+        b.tender?.status === 'evaluation'
+    )
+  }, [vaultBids])
+
+  const wonBids = useMemo(() => {
+    return vaultBids.filter(
+      (b) =>
+        b.approvalState === 'awarded' ||
+        b.tender?.status === 'awarded' ||
+        b.isAwardWinner
+    )
+  }, [vaultBids])
+
+  const lostBids = useMemo(() => {
+    return vaultBids.filter(
+      (b) =>
+        b.approvalState === 'rejected' ||
+        b.approvalState === 'disqualified' ||
+        (b.tender?.status === 'closed' && b.approvalState !== 'awarded' && !b.isAwardWinner)
+    )
+  }, [vaultBids])
+
   // Saved tenders mutations
   const toggleSaveMutation = useMutation({
     mutationFn: async ({ tenderId, isSaved }: { tenderId: string; isSaved: boolean }) => {
@@ -463,6 +492,14 @@ export default function BidderPortalPage() {
   const currentDoc = effectiveDocsList.find((d: any) => d.docType === docSub) || FALLBACK_DOCUMENTS[docSub] || effectiveDocsList[0]
   const isDocReverifying = reverifyingDocType === docSub || reverifyingDocType === currentDoc?.docType || (isUploading && docSub === currentDoc?.docType) || currentDoc?.status === 'in_progress'
 
+  // Strictly isolate polling pipeline & last uploaded file to the currently active document tab
+  const isThisDocActiveUpload = Boolean(
+    (statusQuery.data?.data && (statusQuery.data.data.docType === docSub || statusQuery.data.data.docType === currentDoc?.docType)) ||
+    (lastUploadedFile && reverifyingDocType === docSub)
+  )
+  const activeUploadData = isThisDocActiveUpload ? statusQuery.data?.data : null
+  const activeUploadedFile = isThisDocActiveUpload ? lastUploadedFile : null
+
   return (
     <div className="flex flex-col md:flex-row gap-6 min-h-[calc(100vh-8rem)]">
       {/* ─── Fixed Workspace Sidebar Rail ──────────────────── */}
@@ -493,15 +530,15 @@ export default function BidderPortalPage() {
         {/* Company Header Card */}
         <div className="p-2.5 bg-cream-50 dark:bg-slate-800/60 rounded-xl border border-line dark:border-slate-700 mb-1">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-navy-900 dark:bg-saffron-600 text-cream-50 flex items-center justify-center font-bold text-base shrink-0">
+            <div className="w-10 h-10 rounded-full bg-navy-900 dark:bg-saffron-500 text-cream-50 dark:text-navy-950 flex items-center justify-center font-bold text-base shrink-0">
               AE
             </div>
             {!sidebarCollapsed && (
               <div className="flex flex-col min-w-0">
-                <span className="font-semibold text-base text-ink-900 dark:text-cream-50 truncate">
+                <span className="font-semibold text-base text-ink-900 dark:text-white truncate">
                   {profile?.displayName || 'Ananya Enterprises'}
                 </span>
-                <span className="text-xs font-mono text-ink-500 dark:text-slate-400 truncate">
+                <span className="text-xs font-mono text-ink-500 dark:text-slate-300 truncate">
                   PAN: AAWBS9999P
                 </span>
               </div>
@@ -522,12 +559,12 @@ export default function BidderPortalPage() {
               'flex items-center rounded-lg text-sm font-medium transition-colors',
               sidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5',
               activeNav === 'company'
-                ? 'bg-navy-900/5 dark:bg-saffron-600/20 text-navy-900 dark:text-saffron-300 font-semibold border-l-2 border-saffron-500'
+                ? 'bg-navy-900/5 dark:bg-slate-800/90 text-navy-900 dark:text-white font-semibold border-l-2 border-saffron-500'
                 : 'text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-50 dark:hover:bg-slate-800'
             )}
           >
             <span className="flex items-center gap-2.5">
-              <Building className="w-5 h-5 text-ink-500 dark:text-slate-400" />
+              <Building className="w-5 h-5 text-ink-500 dark:text-slate-200" />
               {!sidebarCollapsed && <span>Company</span>}
             </span>
           </button>
@@ -537,7 +574,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setCompanySub('overview')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  companySub === 'overview' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  companySub === 'overview' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 Overview
@@ -546,7 +583,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setCompanySub('compliance')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  companySub === 'compliance' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  companySub === 'compliance' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 Compliance (4/5)
@@ -555,7 +592,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setCompanySub('trust')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  companySub === 'trust' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  companySub === 'trust' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 Trust Score ({profile?.trustScore ?? 88})
@@ -577,12 +614,12 @@ export default function BidderPortalPage() {
               'flex items-center rounded-lg text-sm font-medium transition-colors',
               sidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5',
               activeNav === 'tenders'
-                ? 'bg-navy-900/5 dark:bg-saffron-600/20 text-navy-900 dark:text-saffron-300 font-semibold border-l-2 border-saffron-500'
+                ? 'bg-navy-900/5 dark:bg-slate-800/90 text-navy-900 dark:text-white font-semibold border-l-2 border-saffron-500'
                 : 'text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-50 dark:hover:bg-slate-800'
             )}
           >
             <span className="flex items-center gap-2.5">
-              <Search className="w-5 h-5 text-ink-500 dark:text-slate-400" />
+              <Search className="w-5 h-5 text-ink-500 dark:text-slate-200" />
               {!sidebarCollapsed && <span>Open Tenders</span>}
             </span>
             {!sidebarCollapsed && (
@@ -597,7 +634,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setTendersSub('all')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  tendersSub === 'all' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  tendersSub === 'all' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 All Open ({allTenders.length})
@@ -606,7 +643,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setTendersSub('matching')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  tendersSub === 'matching' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  tendersSub === 'matching' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 Matching My Profile ({matchingTenders.length})
@@ -615,7 +652,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setTendersSub('saved')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  tendersSub === 'saved' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  tendersSub === 'saved' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 Saved ({savedTenders.length})
@@ -637,17 +674,17 @@ export default function BidderPortalPage() {
               'flex items-center rounded-lg text-sm font-medium transition-colors',
               sidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5',
               activeNav === 'bids'
-                ? 'bg-navy-900/5 dark:bg-saffron-600/20 text-navy-900 dark:text-saffron-300 font-semibold border-l-2 border-saffron-500'
+                ? 'bg-navy-900/5 dark:bg-slate-800/90 text-navy-900 dark:text-white font-semibold border-l-2 border-saffron-500'
                 : 'text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-50 dark:hover:bg-slate-800'
             )}
           >
             <span className="flex items-center gap-2.5">
-              <FileText className="w-5 h-5 text-ink-500 dark:text-slate-400" />
+              <FileText className="w-5 h-5 text-ink-500 dark:text-slate-200" />
               {!sidebarCollapsed && <span>My Bids</span>}
             </span>
             {!sidebarCollapsed && (
               <span className="font-mono text-xs text-ink-600 dark:text-slate-300 bg-cream-100 dark:bg-slate-800 px-2 py-0.5 rounded-full font-semibold">
-                3
+                {vaultBids.length}
               </span>
             )}
           </button>
@@ -656,38 +693,42 @@ export default function BidderPortalPage() {
               <button
                 type="button"
                 onClick={() => setBidsSub('active')}
-                className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  bidsSub === 'active' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                className={`text-left text-sm py-1.5 px-2.5 rounded-md flex items-center justify-between ${
+                  bidsSub === 'active' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
-                Active (3)
+                <span>Active Review</span>
+                <span className="text-xs font-mono font-semibold">{activeBids.length}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setBidsSub('won')}
-                className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  bidsSub === 'won' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                className={`text-left text-sm py-1.5 px-2.5 rounded-md flex items-center justify-between ${
+                  bidsSub === 'won' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
-                Won (2)
+                <span>Won Awards</span>
+                <span className="text-xs font-mono font-semibold">{wonBids.length}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setBidsSub('lost')}
-                className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  bidsSub === 'lost' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                className={`text-left text-sm py-1.5 px-2.5 rounded-md flex items-center justify-between ${
+                  bidsSub === 'lost' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
-                Lost (4)
+                <span>Concluded</span>
+                <span className="text-xs font-mono font-semibold">{lostBids.length}</span>
               </button>
               <button
                 type="button"
                 onClick={() => setBidsSub('vault')}
-                className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  bidsSub === 'vault' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                className={`text-left text-sm py-1.5 px-2.5 rounded-md flex items-center justify-between ${
+                  bidsSub === 'vault' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
-                Vault & Reports
+                <span>Vault (PDFs)</span>
+                <span className="text-xs font-mono font-semibold">{vaultBids.length}</span>
               </button>
             </div>
           )}
@@ -706,12 +747,12 @@ export default function BidderPortalPage() {
               'flex items-center rounded-lg text-sm font-medium transition-colors',
               sidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5',
               activeNav === 'documents'
-                ? 'bg-navy-900/5 dark:bg-saffron-600/20 text-navy-900 dark:text-saffron-300 font-semibold border-l-2 border-saffron-500'
+                ? 'bg-navy-900/5 dark:bg-slate-800/90 text-navy-900 dark:text-white font-semibold border-l-2 border-saffron-500'
                 : 'text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-50 dark:hover:bg-slate-800'
             )}
           >
             <span className="flex items-center gap-2.5">
-              <FileCheck2 className="w-5 h-5 text-ink-500 dark:text-slate-400" />
+              <FileCheck2 className="w-5 h-5 text-ink-500 dark:text-slate-200" />
               {!sidebarCollapsed && <span>Documents</span>}
             </span>
             {!sidebarCollapsed && (
@@ -726,7 +767,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setDocSub('pan_card')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  docSub === 'pan_card' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  docSub === 'pan_card' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 PAN Card
@@ -735,7 +776,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setDocSub('gst_certificate')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  docSub === 'gst_certificate' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  docSub === 'gst_certificate' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 GST Certificate
@@ -744,7 +785,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setDocSub('udyam_certificate')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  docSub === 'udyam_certificate' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  docSub === 'udyam_certificate' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 Udyam MSME
@@ -753,7 +794,7 @@ export default function BidderPortalPage() {
                 type="button"
                 onClick={() => setDocSub('itr_document')}
                 className={`text-left text-sm py-1.5 px-2.5 rounded-md ${
-                  docSub === 'itr_document' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-saffron-400' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900'
+                  docSub === 'itr_document' ? 'font-semibold text-navy-900 bg-cream-100 dark:bg-slate-800 dark:text-white' : 'text-ink-600 dark:text-slate-300 hover:text-ink-900 dark:hover:text-white'
                 }`}
               >
                 ITR Documents
@@ -774,12 +815,12 @@ export default function BidderPortalPage() {
             'flex items-center rounded-lg text-sm font-medium transition-colors',
             sidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5',
             activeNav === 'deliveries'
-              ? 'bg-navy-900/5 dark:bg-saffron-600/20 text-navy-900 dark:text-saffron-300 font-semibold border-l-2 border-saffron-500'
+              ? 'bg-navy-900/5 dark:bg-slate-800/90 text-navy-900 dark:text-white font-semibold border-l-2 border-saffron-500'
               : 'text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-50 dark:hover:bg-slate-800'
           )}
         >
           <span className="flex items-center gap-2.5">
-            <Truck className="w-5 h-5 text-ink-500 dark:text-slate-400" />
+            <Truck className="w-5 h-5 text-ink-500 dark:text-slate-200" />
             {!sidebarCollapsed && <span>Deliveries</span>}
           </span>
           {!sidebarCollapsed && (
@@ -789,34 +830,7 @@ export default function BidderPortalPage() {
           )}
         </button>
 
-        {/* Section 6: Alerts */}
-        <button
-          type="button"
-          onClick={() => {
-            setActiveNav('alerts')
-            if (sidebarCollapsed) setSidebarCollapsed(false)
-          }}
-          title="Notices & Alerts"
-          className={cn(
-            'flex items-center rounded-lg text-sm font-medium transition-colors',
-            sidebarCollapsed ? 'justify-center p-2.5' : 'justify-between px-3.5 py-2.5',
-            activeNav === 'alerts'
-              ? 'bg-navy-900/5 dark:bg-saffron-600/20 text-navy-900 dark:text-saffron-300 font-semibold border-l-2 border-saffron-500'
-              : 'text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-50 dark:hover:bg-slate-800'
-          )}
-        >
-          <span className="flex items-center gap-2.5">
-            <Bell className="w-5 h-5 text-ink-500 dark:text-slate-400" />
-            {!sidebarCollapsed && <span>Alerts</span>}
-          </span>
-          {!sidebarCollapsed && (
-            <span className="font-mono text-xs text-white bg-risk-critical px-2 py-0.5 rounded-full font-bold">
-              {alertsList.filter((a: any) => !a.read).length || 3}
-            </span>
-          )}
-        </button>
-
-        {/* Section 7: Settings */}
+        {/* Section 6: Settings */}
         <button
           type="button"
           onClick={() => {
@@ -828,11 +842,11 @@ export default function BidderPortalPage() {
             'flex items-center rounded-lg text-sm font-medium transition-colors',
             sidebarCollapsed ? 'justify-center p-2.5' : 'gap-2.5 px-3.5 py-2.5',
             activeNav === 'settings'
-              ? 'bg-navy-900/5 dark:bg-saffron-600/20 text-navy-900 dark:text-saffron-300 font-semibold border-l-2 border-saffron-500'
+              ? 'bg-navy-900/5 dark:bg-slate-800/90 text-navy-900 dark:text-white font-semibold border-l-2 border-saffron-500'
               : 'text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white hover:bg-cream-50 dark:hover:bg-slate-800'
           )}
         >
-          <Settings className="w-5 h-5 text-ink-500 dark:text-slate-400" />
+          <Settings className="w-5 h-5 text-ink-500 dark:text-slate-200" />
           {!sidebarCollapsed && <span>Settings</span>}
         </button>
       </aside>
@@ -843,83 +857,100 @@ export default function BidderPortalPage() {
         {activeNav === 'company' && companySub === 'overview' && (
           <div className="flex flex-col gap-6">
             {/* Sovereign Welcome Banner */}
-            <div className="p-5 bg-gradient-to-r from-navy-900 to-navy-800 text-cream-50 rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="p-5 bg-gradient-to-r from-navy-900 via-navy-800 to-navy-950 text-white rounded-xl shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border border-navy-700/60">
               <div>
                 <span className="text-micro font-mono uppercase tracking-wider text-saffron-400 font-semibold">
                   Authorized Bidder Portal
                 </span>
-                <h1 className="text-h2 font-display font-semibold mt-0.5">
-                  Welcome back, {user?.name || 'Ananya'}
+                <h1 className="text-h2 font-display font-semibold mt-0.5 text-white">
+                  Welcome back, {user?.name || 'Authorized Representative'}
                 </h1>
-                <p className="text-small text-cream-200 mt-1">
-                  Managing: <strong>Ananya Enterprises Pvt Ltd</strong> · PAN:{' '}
-                  <span className="font-mono">AAWBS9999P</span> · GSTIN:{' '}
-                  <span className="font-mono">27AAWBS****1Z5</span> · Udyam:{' '}
-                  <span className="font-mono">UDYAM-MH-01-00892</span>
+                <p className="text-small text-cream-100 mt-1">
+                  Managing: <strong className="text-white">{vaultBids[0]?.companyName || profile?.displayName || 'Ananya Enterprises Pvt Ltd'}</strong> · PAN:{' '}
+                  <span className="font-mono text-white">{vaultBids[0]?.pan || 'AAWBS9999P'}</span> · GSTIN:{' '}
+                  <span className="font-mono text-white">{vaultBids[0]?.gstin ? `${vaultBids[0].gstin.slice(0, 7)}****${vaultBids[0].gstin.slice(-3)}` : '27AAWBS****1Z5'}</span> · Udyam:{' '}
+                  <span className="font-mono text-white">UDYAM-MH-01-00892</span>
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="primary"
-                  size="sm"
+              <div className="flex items-center gap-2.5 shrink-0">
+                <button
+                  type="button"
                   onClick={() => {
                     setActiveNav('tenders')
                     setTendersSub('all')
                   }}
-                  className="bg-saffron-500 hover:bg-saffron-600 text-navy-950 font-bold"
+                  className="px-3.5 py-2 rounded-lg bg-saffron-500 hover:bg-saffron-400 text-navy-950 font-bold text-sm shadow-xs transition-colors"
                 >
                   Browse Tenders
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
+                </button>
+                <button
+                  type="button"
                   onClick={() => setActiveNav('documents')}
-                  className="bg-navy-800 text-cream-50 border-navy-700 hover:bg-navy-700"
+                  className="px-3.5 py-2 rounded-lg bg-white text-navy-900 border border-slate-300 hover:bg-slate-100 dark:bg-white/15 dark:text-white dark:border-white/30 dark:hover:bg-white/25 font-semibold text-sm transition-colors shadow-xs"
                 >
                   Upload Document
-                </Button>
+                </button>
               </div>
             </div>
 
             {/* 6 Metric KPI Tiles (Fix 25) — connected panel */}
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-px bg-line rounded-lg border border-line overflow-hidden shadow-xs">
-              <div className="p-3.5 bg-paper flex flex-col justify-between">
-                <span className="text-micro text-ink-500 font-medium">Trust Score</span>
-                <p className="text-h2 font-display font-bold text-navy-900 mt-1">
-                  {profile?.trustScore ?? 88} <span className="text-micro font-sans font-normal text-ink-500">/ 100</span>
+              <div className="p-3.5 bg-paper dark:bg-navy-900 flex flex-col justify-between">
+                <span className="text-micro text-ink-500 dark:text-cream-300 font-medium">Trust Score</span>
+                <p className="text-h2 font-display font-bold text-navy-900 dark:text-cream-50 mt-1">
+                  {profile?.trustScore ?? 88} <span className="text-micro font-sans font-normal text-ink-500 dark:text-cream-400">/ 100</span>
                 </p>
-                <span className="text-micro font-semibold text-risk-low mt-1">Verified Veteran</span>
+                <span className="text-micro font-semibold text-risk-low mt-1">
+                  {profile?.badges?.includes('verified_veteran') ? 'Verified Veteran' : 'Sovereign Verified'}
+                </span>
               </div>
 
-              <div className="p-3.5 bg-paper flex flex-col justify-between">
-                <span className="text-micro text-ink-500 font-medium">Active Bids</span>
-                <p className="text-h2 font-display font-bold text-navy-900 mt-1">3</p>
-                <span className="text-micro text-ink-500 mt-1">2 in evaluation</span>
+              <div
+                className="p-3.5 bg-paper dark:bg-navy-900 flex flex-col justify-between cursor-pointer hover:bg-cream-100/60 dark:hover:bg-navy-800 transition-colors"
+                onClick={() => {
+                  setActiveNav('bids')
+                  setBidsSub('active')
+                }}
+                title="Click to view active bids"
+              >
+                <span className="text-micro text-ink-500 dark:text-cream-300 font-medium">Active Bids</span>
+                <p className="text-h2 font-display font-bold text-navy-900 dark:text-cream-50 mt-1">{activeBids.length}</p>
+                <span className="text-micro text-ink-500 dark:text-cream-400 mt-1">{activeBids.length} in evaluation</span>
               </div>
 
-              <div className="p-3.5 bg-paper flex flex-col justify-between">
-                <span className="text-micro text-ink-500 font-medium">Fees Paid</span>
-                <p className="text-h2 font-display font-bold text-navy-900 mt-1">₹15,000</p>
-                <span className="text-micro text-ink-500 mt-1">Across 3 tenders</span>
+              <div className="p-3.5 bg-paper dark:bg-navy-900 flex flex-col justify-between">
+                <span className="text-micro text-ink-500 dark:text-cream-300 font-medium">Won Awards</span>
+                <p className="text-h2 font-display font-bold text-navy-900 dark:text-cream-50 mt-1">{wonBids.length}</p>
+                <span className="text-micro text-risk-low mt-1">{wonBids.length} contract{wonBids.length === 1 ? '' : 's'} won</span>
               </div>
 
-              <div className="p-3.5 bg-paper flex flex-col justify-between">
-                <span className="text-micro text-ink-500 font-medium">Compliance</span>
-                <p className="text-h2 font-display font-bold text-risk-low mt-1">4 of 5 ✓</p>
-                <span className="text-micro text-risk-medium mt-1">GST renew in 30d</span>
+              <div className="p-3.5 bg-paper dark:bg-navy-900 flex flex-col justify-between">
+                <span className="text-micro text-ink-500 dark:text-cream-300 font-medium">Fees Paid</span>
+                <p className="text-h2 font-display font-bold text-navy-900 dark:text-cream-50 mt-1">
+                  ₹{((vaultBids.length || 3) * 5000).toLocaleString('en-IN')}
+                </p>
+                <span className="text-micro text-ink-500 dark:text-cream-400 mt-1">Across {vaultBids.length || 3} tenders</span>
               </div>
 
-              <div className="p-3.5 bg-paper flex flex-col justify-between">
-                <span className="text-micro text-ink-500 font-medium">Delivery Rate</span>
-                <p className="text-h2 font-display font-bold text-navy-900 mt-1">95%</p>
-                <span className="text-micro text-risk-low mt-1">On-time track</span>
+              <div className="p-3.5 bg-paper dark:bg-navy-900 flex flex-col justify-between">
+                <span className="text-micro text-ink-500 dark:text-cream-300 font-medium">Compliance</span>
+                <p className="text-h2 font-display font-bold text-risk-low mt-1">
+                  {compliance?.passedCount ?? 4} of {compliance?.totalCount ?? 5} ✓
+                </p>
+                <span className="text-micro text-risk-medium mt-1">
+                  {compliance?.checks?.some((c: any) => c.status === 'warning') ? '1 renewal notice' : 'All Clear'}
+                </span>
               </div>
 
-              <div className="p-3.5 bg-paper flex flex-col justify-between">
-                <span className="text-micro text-ink-500 font-medium">Alerts</span>
-                <p className="text-h2 font-display font-bold text-risk-medium mt-1">3</p>
-                <span className="text-micro text-ink-500 mt-1">1 renewal pending</span>
+              <div className="p-3.5 bg-paper dark:bg-navy-900 flex flex-col justify-between">
+                <span className="text-micro text-ink-500 dark:text-cream-300 font-medium">Delivery Rate</span>
+                <p className="text-h2 font-display font-bold text-navy-900 dark:text-cream-50 mt-1">
+                  {profile?.stats?.onTimeDeliveries ? Math.round((profile.stats.onTimeDeliveries / Math.max(1, profile.stats.onTimeDeliveries + (profile.stats.lateDeliveries || 0))) * 100) : 95}%
+                </p>
+                <span className="text-micro text-risk-low mt-1">
+                  {profile?.stats?.onTimeDeliveries ?? 4} on-time record
+                </span>
               </div>
             </div>
 
@@ -1209,8 +1240,10 @@ export default function BidderPortalPage() {
               <button
                 type="button"
                 onClick={() => setTendersSub('all')}
-                className={`px-3 py-1.5 rounded-md text-small font-medium transition-colors ${
-                  tendersSub === 'all' ? 'bg-navy-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'
+                className={`px-3 py-1.5 rounded-md text-small font-semibold transition-colors ${
+                  tendersSub === 'all'
+                    ? 'bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950 font-bold'
+                    : 'text-ink-600 dark:text-cream-300 hover:text-ink-900 dark:hover:text-cream-50 hover:bg-cream-100 dark:hover:bg-slate-800'
                 }`}
               >
                 All Open ({allTenders.length})
@@ -1218,8 +1251,10 @@ export default function BidderPortalPage() {
               <button
                 type="button"
                 onClick={() => setTendersSub('matching')}
-                className={`px-3 py-1.5 rounded-md text-small font-medium transition-colors ${
-                  tendersSub === 'matching' ? 'bg-navy-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'
+                className={`px-3 py-1.5 rounded-md text-small font-semibold transition-colors ${
+                  tendersSub === 'matching'
+                    ? 'bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950 font-bold'
+                    : 'text-ink-600 dark:text-cream-300 hover:text-ink-900 dark:hover:text-cream-50 hover:bg-cream-100 dark:hover:bg-slate-800'
                 }`}
               >
                 Matching My Profile ({matchingTenders.length})
@@ -1227,8 +1262,10 @@ export default function BidderPortalPage() {
               <button
                 type="button"
                 onClick={() => setTendersSub('saved')}
-                className={`px-3 py-1.5 rounded-md text-small font-medium transition-colors ${
-                  tendersSub === 'saved' ? 'bg-navy-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'
+                className={`px-3 py-1.5 rounded-md text-small font-semibold transition-colors ${
+                  tendersSub === 'saved'
+                    ? 'bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950 font-bold'
+                    : 'text-ink-600 dark:text-cream-300 hover:text-ink-900 dark:hover:text-cream-50 hover:bg-cream-100 dark:hover:bg-slate-800'
                 }`}
               >
                 Saved Tenders ({savedTenders.length})
@@ -1348,79 +1385,399 @@ export default function BidderPortalPage() {
             </div>
 
             {/* Sub-nav */}
-            <div className="flex items-center gap-2 border-b border-line pb-2">
+            <div className="flex items-center gap-2 border-b border-line pb-2 flex-wrap">
               <button
                 type="button"
                 onClick={() => setBidsSub('active')}
-                className={`px-3 py-1.5 rounded-md text-small font-medium transition-colors ${
-                  bidsSub === 'active' ? 'bg-navy-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'
+                className={`px-3.5 py-1.5 rounded-lg text-small font-semibold transition-colors flex items-center gap-2 ${
+                  bidsSub === 'active'
+                    ? 'bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950 font-bold'
+                    : 'text-ink-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-cream-50 hover:bg-cream-100 dark:hover:bg-slate-800'
                 }`}
               >
-                Active Review (3)
+                <span>Active Review</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+                  bidsSub === 'active' ? 'bg-saffron-500 text-navy-950 dark:bg-navy-950 dark:text-saffron-300' : 'bg-cream-200 dark:bg-slate-700 text-ink-700 dark:text-slate-300'
+                }`}>
+                  {activeBids.length}
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => setBidsSub('won')}
-                className={`px-3 py-1.5 rounded-md text-small font-medium transition-colors ${
-                  bidsSub === 'won' ? 'bg-navy-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'
+                className={`px-3.5 py-1.5 rounded-lg text-small font-semibold transition-colors flex items-center gap-2 ${
+                  bidsSub === 'won'
+                    ? 'bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950 font-bold'
+                    : 'text-ink-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-cream-50 hover:bg-cream-100 dark:hover:bg-slate-800'
                 }`}
               >
-                Won Awards (2)
+                <span>Won Awards</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+                  bidsSub === 'won' ? 'bg-emerald-400 text-emerald-950 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-cream-200 dark:bg-slate-700 text-ink-700 dark:text-slate-300'
+                }`}>
+                  {wonBids.length}
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => setBidsSub('lost')}
-                className={`px-3 py-1.5 rounded-md text-small font-medium transition-colors ${
-                  bidsSub === 'lost' ? 'bg-navy-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'
+                className={`px-3.5 py-1.5 rounded-lg text-small font-semibold transition-colors flex items-center gap-2 ${
+                  bidsSub === 'lost'
+                    ? 'bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950 font-bold'
+                    : 'text-ink-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-cream-50 hover:bg-cream-100 dark:hover:bg-slate-800'
                 }`}
               >
-                Past Concluded (4)
+                <span>Past Concluded</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+                  bidsSub === 'lost' ? 'bg-slate-300 text-slate-900 dark:bg-slate-700 dark:text-slate-200' : 'bg-cream-200 dark:bg-slate-700 text-ink-700 dark:text-slate-300'
+                }`}>
+                  {lostBids.length}
+                </span>
               </button>
               <button
                 type="button"
                 onClick={() => setBidsSub('vault')}
-                className={`px-3 py-1.5 rounded-md text-small font-medium transition-colors ${
-                  bidsSub === 'vault' ? 'bg-navy-900 text-cream-50' : 'text-ink-600 hover:text-ink-900'
+                className={`px-3.5 py-1.5 rounded-lg text-small font-semibold transition-colors flex items-center gap-2 ${
+                  bidsSub === 'vault'
+                    ? 'bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950 font-bold'
+                    : 'text-ink-600 dark:text-slate-300 hover:text-navy-900 dark:hover:text-cream-50 hover:bg-cream-100 dark:hover:bg-slate-800'
                 }`}
               >
-                Verifiable Vault (PDF Reports)
+                <span>Verifiable Vault</span>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-bold ${
+                  bidsSub === 'vault' ? 'bg-saffron-500 text-navy-950 dark:bg-navy-950 dark:text-saffron-300' : 'bg-cream-200 dark:bg-slate-700 text-ink-700 dark:text-slate-300'
+                }`}>
+                  {vaultBids.length}
+                </span>
               </button>
             </div>
 
-            {/* Bids List */}
-            {vaultBids.length === 0 ? (
-              <div className="p-6 bg-paper rounded-xl border border-line text-center text-ink-500">
-                No active bids recorded in vault.
-              </div>
-            ) : (
-              <div className="flex flex-col gap-3">
-                {vaultBids.map((b) => (
-                  <div key={b.bidderId} className="p-4 bg-paper rounded-xl border border-line shadow-xs flex flex-col gap-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex flex-col">
-                        <span className="font-semibold text-ink-900 text-base">
-                          {b.tender?.title || 'Government Procurement'}
-                        </span>
-                        <span className="font-mono text-micro text-ink-500">
-                          GEM ID: {b.tender?.gemTenderId || 'GEM-2026-B-001'} · Submitted: {formatDate(b.createdAt)}
-                        </span>
+            {/* Sub-tab 1: Active Review */}
+            {bidsSub === 'active' && (
+              activeBids.length === 0 ? (
+                <EmptyState
+                  title="No active bids in evaluation"
+                  description="You do not currently have any active bids undergoing tender evaluation."
+                  icon={<FileText className="w-8 h-8 text-ink-400" />}
+                  action={
+                    <Button variant="primary" size="sm" onClick={() => { setActiveNav('tenders'); setTendersSub('all'); }}>
+                      Browse Open Tenders
+                    </Button>
+                  }
+                />
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {activeBids.map((b) => (
+                    <div key={b.bidderId} className="p-5 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs flex flex-col gap-4 hover:border-navy-900/30 transition-all">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-micro font-bold text-navy-800 dark:text-saffron-400 bg-cream-100 dark:bg-slate-800 px-2.5 py-0.5 rounded border border-line dark:border-slate-700">
+                              {b.tender?.gemTenderId || 'GEM/2026/B/5001234'}
+                            </span>
+                            <Badge variant="warning">Under Technical Evaluation</Badge>
+                            <span className="text-micro text-ink-500 font-mono">
+                              Submitted: {formatDate(b.createdAt)}
+                            </span>
+                          </div>
+                          <h3 className="font-semibold text-ink-900 dark:text-slate-100 text-lg leading-snug mt-1">
+                            {b.tender?.title || 'Government Procurement Tender'}
+                          </h3>
+                        </div>
+
+                        <div className="flex flex-col items-start sm:items-end">
+                          <span className="text-micro uppercase tracking-wider text-ink-500 font-medium">Quoted Total</span>
+                          <span className="text-lg font-bold text-navy-900 dark:text-saffron-300 font-mono">
+                            {b.quotedPrice ? `₹${Number(b.quotedPrice).toLocaleString('en-IN')}` : '₹48,50,000'}
+                          </span>
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
-                        <Badge variant="success">Qualified</Badge>
+                      {/* 3-Step Live Progress Stepper */}
+                      <div className="p-3.5 bg-cream-50 dark:bg-[#102649] rounded-lg border border-line dark:border-[#1C3B68] grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-ink-900 dark:text-slate-200">1. Bid Sealed &amp; Encrypted</span>
+                            <span className="text-[10px] text-ink-500">SHA-256 sealed payload</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-ink-900 dark:text-slate-200">2. Statutory Verification</span>
+                            <span className="text-[10px] text-ink-500">MSME/GST/PAN cross-checked</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-amber-600 dark:text-amber-400 animate-spin shrink-0" />
+                          <div className="flex flex-col">
+                            <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">3. Officer Maker-Checker</span>
+                            <span className="text-[10px] text-amber-600 dark:text-amber-400">Under dual review</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Bottom actions */}
+                      <div className="flex items-center justify-between pt-3 border-t border-line dark:border-slate-800 flex-wrap gap-2">
+                        <div className="flex items-center gap-2 text-micro text-ink-600 dark:text-slate-400 font-mono">
+                          <span>Entity: {b.companyName || 'Ananya Enterprises Pvt Ltd'}</span>
+                          <span>·</span>
+                          <span>PAN: {b.pan || 'AAWBS9999P'}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/tenders/${b.tenderId}`}
+                            className="px-3 py-1.5 text-small font-medium text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white"
+                          >
+                            View Tender Details
+                          </Link>
+                          <a
+                            href={`http://localhost:4000/bidder/me/vault/${b.tenderId}/report`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-900 text-cream-50 hover:bg-navy-800 dark:bg-saffron-500 dark:text-navy-950 dark:hover:bg-saffron-400 text-small font-bold shadow-xs"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download Sealed Receipt (PDF)</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+            {/* Sub-tab 2: Won Awards */}
+            {bidsSub === 'won' && (
+              wonBids.length === 0 ? (
+                <EmptyState
+                  title="No awarded contracts yet"
+                  description="Contracts awarded to your company will appear here with delivery milestone tracking and signed award certificates."
+                  icon={<Award className="w-8 h-8 text-ink-400" />}
+                />
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {wonBids.map((b) => (
+                    <div key={b.bidderId} className="p-5 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs flex flex-col gap-4 hover:border-emerald-600/30 transition-all">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-micro font-bold text-navy-800 dark:text-saffron-400 bg-cream-100 dark:bg-slate-800 px-2.5 py-0.5 rounded border border-line dark:border-slate-700">
+                              {b.tender?.gemTenderId || 'GEM/2026/B/5001236'}
+                            </span>
+                            <Badge variant="success">🏆 Award Finalized &amp; Appended to Ledger</Badge>
+                            <span className="text-micro text-ink-500 font-mono">
+                              Finalized: {formatDate(b.verifiedAt || b.createdAt)}
+                            </span>
+                          </div>
+                          <h3 className="font-semibold text-ink-900 dark:text-slate-100 text-lg leading-snug mt-1">
+                            {b.tender?.title || 'Government Procurement Award'}
+                          </h3>
+                        </div>
+
+                        <div className="flex flex-col items-start sm:items-end">
+                          <span className="text-micro uppercase tracking-wider text-emerald-700 dark:text-emerald-400 font-bold">Total Contract Value</span>
+                          <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400 font-mono">
+                            {b.quotedPrice ? `₹${Number(b.quotedPrice).toLocaleString('en-IN')}` : '₹1,25,00,000'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Award & Milestone status banner */}
+                      <div className="p-3.5 bg-emerald-50/70 dark:bg-emerald-950/30 rounded-lg border border-emerald-200 dark:border-emerald-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-center gap-2.5">
+                          <ShieldCheck className="w-5 h-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                          <div className="flex flex-col text-xs">
+                            <span className="font-bold text-emerald-900 dark:text-emerald-200">
+                              Unanimous Maker-Checker Concurrence
+                            </span>
+                            <span className="text-emerald-800 dark:text-emerald-300">
+                              Both Primary and Secondary Procurement Officers concurred. Cryptographic proof sealed on Trust Ledger.
+                            </span>
+                          </div>
+                        </div>
+
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => setActiveNav('deliveries')}
+                          className="bg-paper text-emerald-900 border-emerald-300 hover:bg-emerald-100 dark:bg-slate-800 dark:text-emerald-300 shrink-0"
+                        >
+                          <Truck className="w-3.5 h-3.5 mr-1.5" />
+                          View Delivery Milestones (6)
+                        </Button>
+                      </div>
+
+                      {/* Bottom actions */}
+                      <div className="flex items-center justify-between pt-3 border-t border-line dark:border-slate-800 flex-wrap gap-2">
+                        <div className="flex items-center gap-2 text-micro text-ink-600 dark:text-slate-400 font-mono">
+                          <span>Awardee: {b.companyName || 'WinBridge Systems Ltd'}</span>
+                          <span>·</span>
+                          <span>PAN: {b.pan || 'AAWBS9999P'}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/tenders/${b.tenderId}`}
+                            className="px-3 py-1.5 text-small font-medium text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white"
+                          >
+                            View Tender
+                          </Link>
+                          <a
+                            href={`http://localhost:4000/bidder/me/vault/${b.tenderId}/report`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-small font-semibold shadow-xs"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Signed Award Certificate (PDF)</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+            {/* Sub-tab 3: Past Concluded */}
+            {bidsSub === 'lost' && (
+              lostBids.length === 0 ? (
+                <EmptyState
+                  title="No past concluded tenders"
+                  description="Any tenders where bidding has concluded will appear here with transparent officer feedback and debrief records."
+                  icon={<FileCheck2 className="w-8 h-8 text-ink-400" />}
+                />
+              ) : (
+                <div className="flex flex-col gap-4">
+                  {lostBids.map((b) => (
+                    <div key={b.bidderId} className="p-5 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs flex flex-col gap-4">
+                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-micro font-bold text-navy-800 dark:text-saffron-400 bg-cream-100 dark:bg-slate-800 px-2.5 py-0.5 rounded border border-line dark:border-slate-700">
+                              {b.tender?.gemTenderId || 'GEM/2026/B/5001235'}
+                            </span>
+                            <Badge variant="neutral">Concluded · Debrief Available</Badge>
+                            <span className="text-micro text-ink-500 font-mono">
+                              Date: {formatDate(b.createdAt)}
+                            </span>
+                          </div>
+                          <h3 className="font-semibold text-ink-900 dark:text-slate-100 text-lg leading-snug mt-1">
+                            {b.tender?.title || 'Office Stationery &amp; Supplies'}
+                          </h3>
+                        </div>
+
+                        <div className="flex flex-col items-start sm:items-end">
+                          <span className="text-micro uppercase tracking-wider text-ink-500 font-medium">Your Quoted Price</span>
+                          <span className="text-lg font-bold text-ink-800 dark:text-slate-300 font-mono">
+                            {b.quotedPrice ? `₹${Number(b.quotedPrice).toLocaleString('en-IN')}` : '₹4,20,000'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Transparent feedback panel */}
+                      <div className="p-3 bg-cream-50 dark:bg-slate-800/60 rounded-lg border border-line dark:border-slate-700 text-xs text-ink-700 dark:text-slate-300 flex items-start gap-2.5">
+                        <AlertOctagon className="w-4 h-4 text-ink-500 shrink-0 mt-0.5" />
+                        <div>
+                          <span className="font-bold text-ink-900 dark:text-slate-100">Debrief Note: </span>
+                          <span>
+                            {b.officerDecision?.reason ||
+                              'Commercial proposal was responsive and qualified on technical criteria, but exceeded the final awarded L1 price benchmark by 4.2%.'}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bottom actions */}
+                      <div className="flex items-center justify-between pt-3 border-t border-line dark:border-slate-800 flex-wrap gap-2">
+                        <span className="text-micro text-ink-500 font-mono">
+                          Audit Trail ID: <span className="font-bold">{b.bidderId}</span>
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          <Link
+                            to={`/tenders/${b.tenderId}`}
+                            className="px-3 py-1.5 text-small font-medium text-ink-700 dark:text-slate-300 hover:text-navy-900 dark:hover:text-white"
+                          >
+                            View Tender Archive
+                          </Link>
+                          <a
+                            href={`http://localhost:4000/bidder/me/vault/${b.tenderId}/report`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cream-100 hover:bg-cream-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-navy-900 dark:text-slate-200 text-small font-medium border border-line dark:border-slate-700"
+                          >
+                            <Download className="w-3.5 h-3.5" />
+                            <span>Download Audit Record (PDF)</span>
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )
+            )}
+
+            {/* Sub-tab 4: Verifiable Vault */}
+            {bidsSub === 'vault' && (
+              <div className="flex flex-col gap-4">
+                <div className="p-4 bg-navy-900 text-cream-50 rounded-xl flex items-center justify-between flex-wrap gap-3">
+                  <div>
+                    <h3 className="font-semibold text-base">Verifiable Sovereign Vault Records</h3>
+                    <p className="text-xs text-cream-200">
+                      Every bid submitted through BharatBid is cryptographically stamped with SHA-256 Merkle chain proofs.
+                    </p>
+                  </div>
+                  <span className="font-mono text-xs bg-saffron-500 text-navy-950 font-bold px-2.5 py-1 rounded">
+                    {vaultBids.length} Certified Records
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {vaultBids.map((b) => (
+                    <div key={b.bidderId} className="p-4 bg-paper dark:bg-[#0B1B34] rounded-xl border border-line dark:border-[#1C3B68] shadow-xs flex flex-col justify-between gap-3">
+                      <div className="flex flex-col gap-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="font-mono text-micro font-bold text-navy-800 dark:text-saffron-400 bg-cream-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-line dark:border-slate-700">
+                            {b.tender?.gemTenderId || 'GEM/2026/B/5001234'}
+                          </span>
+                          <Badge variant={b.approvalState === 'awarded' ? 'success' : 'neutral'}>
+                            {b.approvalState === 'awarded' ? 'Awarded Winner' : b.approvalState === 'pending' ? 'In Review' : 'Concluded'}
+                          </Badge>
+                        </div>
+
+                        <h4 className="font-semibold text-ink-900 dark:text-slate-100 text-base leading-snug">
+                          {b.tender?.title || 'Procurement Tender'}
+                        </h4>
+
+                        <div className="text-micro text-ink-500 font-mono mt-1">
+                          <span>Submitted: {formatDate(b.createdAt)}</span>
+                          {b.quotedPrice && <span> · Quote: ₹{Number(b.quotedPrice).toLocaleString('en-IN')}</span>}
+                        </div>
+                      </div>
+
+                      <div className="pt-3 border-t border-line dark:border-slate-800 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-[11px] text-emerald-700 dark:text-emerald-400 font-medium">
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          <span>Chain Verified</span>
+                        </div>
+
                         <a
                           href={`http://localhost:4000/bidder/me/vault/${b.tenderId}/report`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-cream-100 hover:bg-cream-200 text-navy-900 text-small font-medium border border-line"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cream-100 hover:bg-cream-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-navy-900 dark:text-slate-200 text-small font-semibold border border-line dark:border-slate-700"
                         >
                           <Download className="w-3.5 h-3.5" />
                           <span>Signed Report (PDF)</span>
                         </a>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -1441,51 +1798,26 @@ export default function BidderPortalPage() {
 
             {/* Per-Doc Sub Navigation */}
             <div className="flex items-center gap-2 border-b border-line pb-3 flex-wrap">
-              <button
-                type="button"
-                onClick={() => setDocSub('pan_card')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  docSub === 'pan_card' ? 'bg-navy-900 text-cream-50' : 'text-ink-700 hover:text-ink-900 hover:bg-cream-100'
-                }`}
-              >
-                PAN Card (PDF)
-              </button>
-              <button
-                type="button"
-                onClick={() => setDocSub('gst_certificate')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  docSub === 'gst_certificate' ? 'bg-navy-900 text-cream-50' : 'text-ink-700 hover:text-ink-900 hover:bg-cream-100'
-                }`}
-              >
-                GST Certificate
-              </button>
-              <button
-                type="button"
-                onClick={() => setDocSub('oem_authorization')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  docSub === 'oem_authorization' ? 'bg-navy-900 text-cream-50' : 'text-ink-700 hover:text-ink-900 hover:bg-cream-100'
-                }`}
-              >
-                OEM Authorization
-              </button>
-              <button
-                type="button"
-                onClick={() => setDocSub('udyam_certificate')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  docSub === 'udyam_certificate' ? 'bg-navy-900 text-cream-50' : 'text-ink-700 hover:text-ink-900 hover:bg-cream-100'
-                }`}
-              >
-                Udyam MSME
-              </button>
-              <button
-                type="button"
-                onClick={() => setDocSub('itr_document')}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
-                  docSub === 'itr_document' ? 'bg-navy-900 text-cream-50' : 'text-ink-700 hover:text-ink-900 hover:bg-cream-100'
-                }`}
-              >
-                ITR Documents
-              </button>
+              {[
+                { id: 'pan_card', label: 'PAN Card (PDF)' },
+                { id: 'gst_certificate', label: 'GST Certificate' },
+                { id: 'oem_authorization', label: 'OEM Authorization' },
+                { id: 'udyam_certificate', label: 'Udyam MSME' },
+                { id: 'itr_document', label: 'ITR Documents' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setDocSub(tab.id as any)}
+                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                    docSub === tab.id
+                      ? 'bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950 font-bold shadow-xs'
+                      : 'text-ink-700 dark:text-cream-300 hover:text-ink-900 dark:hover:text-cream-50 hover:bg-cream-100 dark:hover:bg-slate-800'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
             </div>
 
             {/* Upload Error Banner (Fix 29) */}
@@ -1512,32 +1844,32 @@ export default function BidderPortalPage() {
                     </span>
                     <h3 className="text-xl font-bold text-ink-900 mt-1">{currentDoc.label}</h3>
                     <p className="text-sm text-ink-600 mt-1">
-                      File: <strong className="text-ink-900">{statusQuery.data?.data?.filename || lastUploadedFile?.name || currentDoc.fileName}</strong> · Size:{' '}
-                      {(((lastUploadedFile?.size || currentDoc.sizeBytes)) / 1024).toFixed(0)} KB · Uploaded:{' '}
+                      File: <strong className="text-ink-900">{activeUploadData?.filename || activeUploadedFile?.name || currentDoc.fileName}</strong> · Size:{' '}
+                      {(((activeUploadedFile?.size || currentDoc.sizeBytes)) / 1024).toFixed(0)} KB · Uploaded:{' '}
                       {formatDate(currentDoc.uploadedAt)}
                     </p>
                   </div>
 
-                  {statusQuery.data?.data ? (
+                  {activeUploadData ? (
                     <Badge
                       variant={
-                        statusQuery.data.data.overallStatus === 'verified'
+                        activeUploadData.overallStatus === 'verified'
                           ? 'success'
-                          : statusQuery.data.data.overallStatus === 'warning' || statusQuery.data.data.overallStatus === 'human_review'
+                          : activeUploadData.overallStatus === 'warning' || activeUploadData.overallStatus === 'human_review'
                           ? 'warning'
-                          : statusQuery.data.data.overallStatus === 'failed'
+                          : activeUploadData.overallStatus === 'failed'
                           ? 'danger'
                           : 'info'
                       }
                       className="text-sm px-3.5 py-1"
                     >
-                      {statusQuery.data.data.overallStatus === 'verified'
+                      {activeUploadData.overallStatus === 'verified'
                         ? 'Verified ✓'
-                        : statusQuery.data.data.overallStatus === 'warning'
+                        : activeUploadData.overallStatus === 'warning'
                         ? 'Warning ⚠'
-                        : statusQuery.data.data.overallStatus === 'failed'
+                        : activeUploadData.overallStatus === 'failed'
                         ? 'Failed ✕'
-                        : statusQuery.data.data.overallStatus === 'human_review'
+                        : activeUploadData.overallStatus === 'human_review'
                         ? 'Human Review Required ⚠'
                         : 'Verifying... ⏳'}
                     </Badge>
@@ -1557,36 +1889,36 @@ export default function BidderPortalPage() {
                 {/* SHA-256 Checksum */}
                 <div className="p-3 bg-cream-50 rounded-lg border border-line flex items-center justify-between text-xs sm:text-sm font-mono text-ink-700">
                   <span className="truncate mr-2">
-                    SHA-256: {lastUploadedFile?.sha256 || currentDoc.sha256}
+                    SHA-256: {activeUploadedFile?.sha256 || activeUploadData?.sha256 || currentDoc.sha256}
                   </span>
                   <span className="text-ink-500 shrink-0 font-sans font-medium">
-                    {uploadMutation.isPending ? 'Ingestion In Progress' : 'Immutable Hash'}
+                    {uploadMutation.isPending && isDocReverifying ? 'Ingestion In Progress' : 'Immutable Hash'}
                   </span>
                 </div>
 
                 {/* Live Progressive Verification Pipeline (Fix 39) */}
-                {statusQuery.data?.data ? (
+                {activeUploadData ? (
                   <div className="p-4 bg-cream-50/80 rounded-xl border border-line flex flex-col gap-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-semibold text-navy-800 uppercase tracking-wider">
-                        Progressive Verification Stepper (Mode: {statusQuery.data.data.docType || currentDoc?.docType || 'DOCUMENT'})
+                        Progressive Verification Stepper (Mode: {activeUploadData.docType || currentDoc?.docType || 'DOCUMENT'})
                       </span>
                       <span className="text-xs font-mono text-navy-600 font-bold">
-                        {(statusQuery.data.data.overallStatus || 'IN_PROGRESS').toUpperCase()}
+                        {(activeUploadData.overallStatus || 'IN_PROGRESS').toUpperCase()}
                       </span>
                     </div>
 
-                    <VerificationStepper stages={statusQuery.data.data.stages || []} />
+                    <VerificationStepper stages={activeUploadData.stages || []} />
 
                     <StatusPill
-                      status={statusQuery.data.data.overallStatus || 'in_progress'}
+                      status={activeUploadData.overallStatus || 'in_progress'}
                       isOpen={inspectOpen}
                       onClick={() => setInspectOpen(!inspectOpen)}
                     />
 
                     {inspectOpen && (
                       <div className="flex flex-col gap-2 mt-2">
-                        {(statusQuery.data.data.stages || []).map(
+                        {(activeUploadData.stages || []).map(
                           (s: any) => s.completedAt && <StageDetailRow key={s.stage} stage={s} />
                         )}
                       </div>
@@ -1716,7 +2048,7 @@ export default function BidderPortalPage() {
                 {/* Actions row: View / Replace / Delete */}
                 <div className="flex items-center justify-between pt-4 border-t border-line flex-wrap gap-3">
                   <div className="flex items-center gap-3">
-                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-navy-900 text-cream-50 hover:bg-navy-800 text-sm font-semibold transition-colors shadow-xs">
+                    <label className="cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-navy-900 text-cream-50 hover:bg-navy-800 dark:bg-saffron-500 dark:text-navy-950 dark:hover:bg-saffron-400 text-sm font-bold transition-colors shadow-xs">
                       <UploadCloud className="w-4 h-4" />
                       <span>{isUploading ? 'Uploading…' : 'Replace Document'}</span>
                       <input
@@ -1756,8 +2088,8 @@ export default function BidderPortalPage() {
                     }
                     className={`inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium transition-colors ${
                       currentDoc.tiedToActiveBid
-                        ? 'opacity-40 cursor-not-allowed text-ink-400 border border-line'
-                        : 'text-risk-critical hover:bg-risk-critical/10 border border-risk-critical/20'
+                        ? 'opacity-40 cursor-not-allowed text-ink-400 border border-line dark:border-slate-800 dark:text-slate-600'
+                        : 'text-risk-critical hover:bg-risk-critical/10 border border-risk-critical/20 dark:text-red-400 dark:border-red-500/30 dark:hover:bg-red-950/30'
                     }`}
                   >
                     <Trash2 className="w-4 h-4" />

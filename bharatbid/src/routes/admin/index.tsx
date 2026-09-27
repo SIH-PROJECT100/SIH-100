@@ -1065,7 +1065,7 @@ export default function AdminPage() {
               </span>
               <Link
                 to="/admin"
-                className="flex items-center gap-2 px-2.5 py-1.5 rounded text-xs font-semibold bg-navy-900 text-white dark:bg-saffron-600 dark:text-white"
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded text-xs font-bold bg-navy-900 text-cream-50 dark:bg-saffron-500 dark:text-navy-950"
               >
                 <Sliders className="w-3.5 h-3.5" />
                 <span>Policy & Rules</span>

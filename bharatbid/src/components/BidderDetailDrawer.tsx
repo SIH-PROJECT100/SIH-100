@@ -19,6 +19,7 @@ import {
 import apiClient from '@/lib/apiClient'
 import { formatDate, formatDateTime } from '@/lib/dates'
 import { LedgerEntryRow } from '@/components/ledger/LedgerEntryRow'
+import { useAuth } from '@/providers/AuthProvider'
 import type { Bidder, BidderTrustProfile, DecisionStatus } from '@/types'
 import {
   Drawer,
@@ -57,6 +58,7 @@ export function BidderDetailDrawer({
   expandedCheckCategory: _expandedCheckCategory,
 }: BidderDetailDrawerProps) {
   const queryClient = useQueryClient()
+  const { user } = useAuth()
 
   const [activeTab, setActiveTab] = useState(initialTab)
   const [unmaskedPii, setUnmaskedPii] = useState<{ pan?: string; gstin?: string } | null>(null)
@@ -798,6 +800,38 @@ export function BidderDetailDrawer({
               <TabContent value="decision">
                 <div className="flex flex-col gap-5">
                   <div className="p-4 bg-paper rounded-lg border border-line shadow-sm flex flex-col gap-4">
+                    {/* Maker-Checker Protocol Stage Card */}
+                    {(() => {
+                      const hasPrimaryReview = !!bidder.primaryReviewerId || (bidder.officerDecision as any)?.stage === 'primary' || !!bidder.officerDecision?.status
+                      const hasSecondaryReview = !!bidder.secondaryReviewerId || (bidder.officerDecision as any)?.stage === 'secondary'
+                      const isSelfPrimary = bidder.primaryReviewerId && user?.id === bidder.primaryReviewerId
+
+                      return (
+                        <div className="p-3.5 rounded-lg border flex flex-col gap-2 bg-cream-50/70 dark:bg-navy-900 border-navy-700">
+                          <div className="flex items-center justify-between">
+                            <span className="text-micro font-mono uppercase tracking-wider text-saffron-600 dark:text-saffron-400 font-bold">
+                              GeM Rule 14.2 Protocol
+                            </span>
+                            <Badge variant={hasSecondaryReview ? 'success' : hasPrimaryReview ? 'warning' : 'default'}>
+                              {hasSecondaryReview ? 'Dual Approved (2/2)' : hasPrimaryReview ? 'Stage 2: Checker Concurrence' : 'Stage 1: Primary Review'}
+                            </Badge>
+                          </div>
+                          <p className="text-small font-semibold text-ink-900 dark:text-cream-100">
+                            {hasSecondaryReview
+                              ? 'Dual-Officer Approval Complete & Sealed in Ledger'
+                              : hasPrimaryReview
+                              ? `Primary Maker Review Logged: "${bidder.officerDecision?.status?.toUpperCase()}" — Awaiting Secondary Checker`
+                              : 'Primary Maker Evaluation Desk — Initial Statutory Triage'}
+                          </p>
+                          {isSelfPrimary && !hasSecondaryReview && (
+                            <p className="text-micro text-amber-700 dark:text-amber-300 font-medium bg-amber-50 dark:bg-amber-950/40 p-2 rounded border border-amber-200 dark:border-amber-800">
+                              Notice: You logged the Primary Maker review for this bidder. In accordance with GeM Rule 14.2, independent secondary concurrence must be performed by an alternate officer.
+                            </p>
+                          )}
+                        </div>
+                      )
+                    })()}
+
                     <div>
                       <h4 className="text-small font-semibold text-ink-900">
                         Anti-Anchoring Decision Triage
@@ -880,16 +914,30 @@ export function BidderDetailDrawer({
                       <code className="font-mono text-navy-900">EVT-OFFICER-DECISION</code> with your credentials to the SHA-256 trust ledger.
                     </div>
 
-                    <Button
-                      variant={selectedStatus === 'disqualified' ? 'destructive' : 'primary'}
-                      size="lg"
-                      onClick={() => setIsDecisionConfirmOpen(true)}
-                      disabled={decisionReason.trim().length < 80}
-                      className={decisionReason.trim().length < 80 ? 'opacity-50 cursor-not-allowed' : ''}
-                      title={decisionReason.trim().length < 80 ? `Minimum 80 characters required (${80 - decisionReason.trim().length} more needed)` : 'Commit decision to immutable ledger'}
-                    >
-                      Commit Decision to Ledger
-                    </Button>
+                    {(() => {
+                      const isSelfPrimary = bidder.primaryReviewerId && user?.id === bidder.primaryReviewerId && !bidder.secondaryReviewerId
+                      const isTooShort = decisionReason.trim().length < 80
+                      const isDisabled = isTooShort || !!isSelfPrimary
+
+                      return (
+                        <Button
+                          variant={selectedStatus === 'disqualified' ? 'destructive' : 'primary'}
+                          size="lg"
+                          onClick={() => setIsDecisionConfirmOpen(true)}
+                          disabled={isDisabled}
+                          className={isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
+                          title={
+                            isSelfPrimary
+                              ? 'Alternate officer required for secondary review (Rule 14.2)'
+                              : isTooShort
+                              ? `Minimum 80 characters required (${80 - decisionReason.trim().length} more needed)`
+                              : 'Commit decision to immutable ledger'
+                          }
+                        >
+                          {isSelfPrimary ? 'Awaiting Secondary Officer (Rule 14.2)' : 'Commit Decision to Ledger'}
+                        </Button>
+                      )
+                    })()}
                   </div>
                 </div>
               </TabContent>
