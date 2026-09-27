@@ -222,3 +222,40 @@
     50% { opacity: 0.4; }
   }
 }
+
+/* --- Hide native number input spin buttons globally (cleaner admin UI) --- */
+input[type='number']::-webkit-inner-spin-button,
+input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* --- Sovereign Navy Dark Theme (High Contrast) --- */
+.dark {
+  --color-cream-50:  #071324;
+  --color-cream-100: #102649;
+  --color-paper:     #0B1B34;
+  --color-ink-900:   #F8FAFC;
+  --color-ink-700:   #CBD5E1;
+  --color-ink-600:   #94A3B8;
+  --color-ink-500:   #94A3B8;
+  --color-ink-300:   #64748B;
+  --color-line:      #1C3B68;
+  --color-navy-900:  #F8FAFC;
+  --color-navy-700:  #93C5FD;
+  --color-navy-100:  #152E54;
+}
+
+.dark .bg-paper { background-color: #0B1B34; }
+.dark .bg-cream-50 { background-color: #071324; }
+.dark .bg-cream-100 { background-color: #102649; }
+.dark .text-ink-900 { color: #F8FAFC; }
+.dark .text-ink-700 { color: #CBD5E1; }
+.dark .text-ink-600 { color: #94A3B8; }
+.dark .text-ink-500 { color: #94A3B8; }
+.dark .border-line { border-color: #1C3B68; }
+.dark .bg-navy-900\/5 { background-color: rgba(56, 189, 248, 0.12); }

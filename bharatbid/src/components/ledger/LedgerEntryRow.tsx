@@ -1,7 +1,5 @@
 import { useState } from 'react'
 import {
-  ChevronDown,
-  ChevronUp,
   Lock,
   Building,
   FileText,
@@ -204,7 +202,6 @@ export function LedgerEntryRow({
   showTenderContext = false,
   compact = false,
 }: LedgerEntryRowProps) {
-  const [isExpanded, setIsExpanded] = useState(false)
   const [copiedHash, setCopiedHash] = useState(false)
 
   const { summary, detail } = getActionSummary(entry)
@@ -283,53 +280,12 @@ export function LedgerEntryRow({
         </div>
       )}
 
-      {/* Raw JSON Toggle */}
-      <div className="mt-2 pt-2 border-t border-line/60 flex items-center justify-between">
-        <button
-          type="button"
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="inline-flex items-center gap-1 text-micro font-mono text-ink-500 hover:text-ink-900 transition-colors"
-        >
-          {isExpanded ? (
-            <>
-              <ChevronUp className="w-3.5 h-3.5" />
-              <span>Hide Payload</span>
-            </>
-          ) : (
-            <>
-              <ChevronDown className="w-3.5 h-3.5" />
-              <span>Expand JSON ↓</span>
-            </>
-          )}
-        </button>
-
+      {/* Entry ID Footer */}
+      <div className="mt-2 pt-2 border-t border-line/60 flex items-center justify-end">
         <span className="text-micro font-mono text-ink-400">
-          ID: {entry.id.slice(0, 8)}…
+          Entry ID: {entry.id.slice(0, 8)}…
         </span>
       </div>
-
-      {/* Expanded JSON Viewer */}
-      {isExpanded && (
-        <div className="mt-2 p-2.5 bg-terminal-bg rounded border border-line overflow-x-auto">
-          <pre className="font-mono text-micro text-emerald-400 leading-tight">
-            {JSON.stringify(
-              {
-                id: entry.id,
-                action: entry.action,
-                actorType: entry.actorType,
-                actorId: entry.actorId,
-                bidderId: entry.bidderId,
-                tenderId: entry.tenderId,
-                chainHash: entry.chainHash,
-                createdAt: entry.createdAt,
-                detail: entry.detail,
-              },
-              null,
-              2
-            )}
-          </pre>
-        </div>
-      )}
     </div>
   )
 }

@@ -97,9 +97,9 @@ export function CartelGraph({ cluster, bidders, onSelectBidder, piiRevealed = fa
     return (
       <div className="p-12 text-center bg-paper rounded-lg border border-line">
         <Network className="w-10 h-10 text-ink-300 mx-auto mb-3" />
-        <h4 className="text-h3 font-semibold text-ink-900">No Collusion Clusters Detected</h4>
+        <h4 className="text-h3 font-semibold text-ink-900">No Bidding Rings or Coordinated Groups Detected</h4>
         <p className="text-small text-ink-500 max-w-md mx-auto mt-1">
-          Click "Detect Collusion" to run the 6-signal anti-cartel algorithm across submitted bids.
+          Click "Detect Collusion" to check whether any competing bidders are secretly working together or fixing prices.
         </p>
       </div>
     )
@@ -122,7 +122,7 @@ export function CartelGraph({ cluster, bidders, onSelectBidder, piiRevealed = fa
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-risk-critical animate-ping" />
             <h3 className="text-small font-semibold text-ink-900">
-              Cartel Cluster Network Map (3 Connected Entities)
+              Bidding Ring &amp; Network Map (3 Connected Companies)
             </h3>
           </div>
           <span className="text-micro font-mono text-risk-critical bg-[#FAECEB] px-2 py-0.5 rounded border border-[#EFC2BF]">
@@ -253,11 +253,11 @@ export function CartelGraph({ cluster, bidders, onSelectBidder, piiRevealed = fa
           </div>
 
           <p className="text-small text-ink-700 leading-normal">
-            A high-confidence cartel cluster was identified sharing common ownership, overlapping infrastructure, and tightly clustered bidding amounts.
+            A high-confidence coordinated group was detected sharing common business ownership, matching addresses, and closely fixed bid prices.
           </p>
 
           <div className="p-3 bg-[#FAECEB]/60 rounded border border-[#EFC2BF] flex items-center justify-between text-small">
-            <span className="font-semibold text-risk-critical">Cluster Aggregate Score:</span>
+            <span className="font-semibold text-risk-critical">Group Coordination Score:</span>
             <span className="font-mono font-bold text-risk-critical text-body">
               {(cluster.aggregateScore * 100).toFixed(0)}%
             </span>
@@ -266,7 +266,7 @@ export function CartelGraph({ cluster, bidders, onSelectBidder, piiRevealed = fa
           {/* Fired Signal Checklist */}
           <div className="flex flex-col gap-2 pt-2 border-t border-line">
             <span className="text-micro font-semibold text-ink-700 uppercase tracking-wider">
-              Corroborated Signals ({cluster.signalsFired.length} of 6):
+              Matching Indicators ({cluster.signalsFired.length} of 6):
             </span>
 
             {cluster.signalsFired.map((sig) => (
@@ -276,7 +276,7 @@ export function CartelGraph({ cluster, bidders, onSelectBidder, piiRevealed = fa
               >
                 <span className="text-ink-900">{signalLabels[sig] || sig}</span>
                 <span className="px-1.5 py-0.2 rounded bg-risk-critical text-paper text-[10px] font-mono">
-                  FIRED
+                  DETECTED
                 </span>
               </div>
             ))}
@@ -285,7 +285,7 @@ export function CartelGraph({ cluster, bidders, onSelectBidder, piiRevealed = fa
           {/* Connected Bidders List */}
           <div className="flex flex-col gap-2 pt-2 border-t border-line">
             <span className="text-micro font-semibold text-ink-700 uppercase tracking-wider">
-              Cartel Members ({cluster.bidderIds.length}):
+              Connected Companies in Group ({cluster.bidderIds.length}):
             </span>
 
             {cluster.bidderIds.map((id) => {

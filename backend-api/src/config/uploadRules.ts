@@ -7,25 +7,25 @@ export interface UploadRule {
 
 export const UPLOAD_RULES: Record<string, UploadRule> = {
   pan_card: {
-    allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png'],
+    allowedMimeTypes: ['application/pdf'],
     maxSizeBytes: 5 * 1024 * 1024,
     magicBytes: [0x25, 0x50, 0x44, 0x46], // %PDF
     description: 'Official PAN Card PDF from Income Tax Department',
   },
   pan: {
-    allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png'],
+    allowedMimeTypes: ['application/pdf'],
     maxSizeBytes: 5 * 1024 * 1024,
     magicBytes: [0x25, 0x50, 0x44, 0x46],
     description: 'Official PAN Card PDF from Income Tax Department',
   },
   gst_certificate: {
-    allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png'],
+    allowedMimeTypes: ['application/pdf'],
     maxSizeBytes: 5 * 1024 * 1024,
     magicBytes: [0x25, 0x50, 0x44, 0x46],
     description: 'GSTIN Registration Certificate PDF from GST Portal',
   },
   gst: {
-    allowedMimeTypes: ['application/pdf', 'image/jpeg', 'image/png'],
+    allowedMimeTypes: ['application/pdf'],
     maxSizeBytes: 5 * 1024 * 1024,
     magicBytes: [0x25, 0x50, 0x44, 0x46],
     description: 'GSTIN Registration Certificate PDF from GST Portal',
@@ -71,6 +71,18 @@ export const UPLOAD_RULES: Record<string, UploadRule> = {
     maxSizeBytes: 2 * 1024 * 1024,
     magicBytes: [0x3C, 0x3F, 0x78, 0x6D, 0x6C], // <?xml
     description: 'DigiLocker signed document XML',
+  },
+  oem_authorization: {
+    allowedMimeTypes: ['application/pdf'],
+    maxSizeBytes: 5 * 1024 * 1024,
+    magicBytes: [0x25, 0x50, 0x44, 0x46],
+    description: 'OEM Authorization Certificate PDF',
+  },
+  oem: {
+    allowedMimeTypes: ['application/pdf'],
+    maxSizeBytes: 5 * 1024 * 1024,
+    magicBytes: [0x25, 0x50, 0x44, 0x46],
+    description: 'OEM Authorization Certificate PDF',
   },
 };
 

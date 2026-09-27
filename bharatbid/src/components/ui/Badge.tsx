@@ -18,11 +18,11 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantStyles: Record<BadgeVariant, string> = {
-  default: 'bg-cream-100 text-ink-700 border-line',
-  success: 'bg-[#EBF3EC] text-risk-low border-[#C7DEC9]',
-  warning: 'bg-[#FBF6EA] text-risk-medium border-[#EBDCB4]',
-  danger: 'bg-[#FAECEB] text-risk-critical border-[#EFC2BF]',
-  info: 'bg-navy-100 text-navy-900 border-[#CCD9E6]',
+  default: 'bg-cream-100 text-ink-800 border-line dark:bg-slate-800 dark:text-slate-100 dark:border-slate-700 font-semibold',
+  success: 'bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/70 dark:text-emerald-200 dark:border-emerald-600 font-semibold',
+  warning: 'bg-amber-50 text-amber-900 border-amber-300 dark:bg-amber-950/70 dark:text-amber-200 dark:border-amber-600 font-semibold',
+  danger: 'bg-rose-50 text-rose-800 border-rose-300 dark:bg-rose-950/70 dark:text-rose-200 dark:border-rose-600 font-semibold',
+  info: 'bg-sky-50 text-sky-900 border-sky-300 dark:bg-sky-950/70 dark:text-sky-200 dark:border-sky-600 font-semibold',
 }
 
 const defaultIcons: Record<BadgeVariant, React.ReactNode> = {
