@@ -881,10 +881,11 @@ router.get('/documents', requireRole('bidder'), async (req: Request, res: Respon
       const pRecord = getVerificationStatus(upload.uploadId);
       const vRecord = verificationRegistry.get(upload.uploadId);
       const effectiveRecord = pRecord || vRecord;
-      const demoOutcome = getDemoOutcomeForFile(upload.originalName || upload.fileName) || getDemoOutcomeForFile(normalizedType);
-      const isVerified = effectiveRecord?.overallStatus === 'verified' || (!effectiveRecord && demoOutcome?.overallStatus === 'verified');
-      const isWarning = effectiveRecord?.overallStatus === 'warning' || (!effectiveRecord && demoOutcome?.overallStatus === 'warning');
-      const isFailed = effectiveRecord?.overallStatus === 'failed' || (!effectiveRecord && demoOutcome?.overallStatus === 'failed');
+      const demoOutcome = getDemoOutcomeForFile(upload.originalName || upload.fileName);
+      const effectiveStatus = effectiveRecord?.overallStatus || (upload as any).overallStatus || demoOutcome?.overallStatus;
+      const isVerified = effectiveStatus === 'verified';
+      const isWarning = effectiveStatus === 'warning';
+      const isFailed = effectiveStatus === 'failed';
 
       baseDocs[normalizedType] = {
         docType: normalizedType,
@@ -898,15 +899,15 @@ router.get('/documents', requireRole('bidder'), async (req: Request, res: Respon
           effectiveRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.extractedFields?.gstin ||
           effectiveRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.extractedFields?.pan ||
           effectiveRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.extractedPan ||
-          (isVerified ? baseDocs[normalizedType]?.extractedValue : 'Analyzing...'),
+          (isVerified ? baseDocs[normalizedType]?.extractedValue : isFailed ? 'Verification Failed' : 'Analyzing...'),
         confidence: effectiveRecord?.stages?.find((s: any) => s.stage === 'ai_extraction')?.detail?.confidence || (isVerified ? 0.94 : 0.0),
         uploadId: upload.uploadId,
         url: `/uploads/${upload.uploadId}`,
         stages: effectiveRecord?.stages || [
           { stage: 'uploaded', status: 'passed' },
-          { stage: 'ai_extraction', status: isVerified ? 'passed' : 'in_progress' },
-          { stage: 'cross_check', status: isVerified ? 'passed' : 'pending' },
-          { stage: 'portal_verification', status: isVerified ? 'passed' : 'pending' },
+          { stage: 'ai_extraction', status: isVerified ? 'passed' : isFailed ? 'failed' : 'in_progress' },
+          { stage: 'cross_check', status: isVerified ? 'passed' : isFailed ? 'failed' : 'pending' },
+          { stage: 'portal_verification', status: isVerified ? 'passed' : isFailed ? 'failed' : 'pending' },
         ],
         cryptoVerification: isVerified
           ? (vRecord?.signatureInfo?.hasSignature

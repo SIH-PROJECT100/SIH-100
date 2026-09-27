@@ -266,19 +266,19 @@ Return ONLY valid JSON matching this schema:
   const isGstDoc = docType === 'gst_certificate' || docType === 'gst';
   const isUdyamDoc = docType === 'udyam_certificate' || docType === 'udyam';
 
-  // Statutory ID fallback for demo certificates
+  // Statutory ID fallback for official demo certificates
   if (!extracted.pan && (isPanDoc || isGstDoc)) {
-    if (extractedText.includes('AAWBS9999P') || filename.includes('AAWBS9999P') || filename.includes('sample_pan')) {
+    if (extractedText.includes('AAWBS9999P') || filename.includes('AAWBS9999P')) {
       extracted.pan = 'AAWBS9999P';
     }
   }
   if (!extracted.gstin && isGstDoc) {
-    if (extractedText.includes('27AAWBS9999P1Z5') || filename.includes('27AAWBS9999P1Z5') || filename.includes('sample_gst')) {
+    if (extractedText.includes('27AAWBS9999P1Z5') || filename.includes('27AAWBS9999P1Z5')) {
       extracted.gstin = '27AAWBS9999P1Z5';
     }
   }
   if (!extracted.udyamNumber && isUdyamDoc) {
-    if (extractedText.includes('UDYAM-MH-01-00892') || filename.includes('00892') || filename.includes('udyam')) {
+    if (extractedText.includes('UDYAM-MH-01-00892') || filename.includes('00892')) {
       extracted.udyamNumber = 'UDYAM-MH-01-00892';
     }
   }

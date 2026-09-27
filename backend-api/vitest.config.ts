@@ -15,8 +15,8 @@ export default defineConfig({
     hookTimeout: 30000,
     env: {
       NODE_ENV: 'test',
-      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=test',
-      DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=test',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=public',
+      DIRECT_URL: 'postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=public',
       GEMINI_API_KEY: 'mock_gemini_api_key_for_preflight',
       RATE_LIMIT_TEST_MODE: 'true',
     },

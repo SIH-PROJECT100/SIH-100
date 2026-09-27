@@ -457,8 +457,16 @@ router.post(
         req.file.buffer
       );
 
-      // Start async progressive verification pipeline (Fix 26, 30, 31)
-      runAsyncVerificationPipeline(uploadId, docType, req.file.buffer, bidderId, sha256, req.file.size);
+      // Mirror initial state in verificationRegistry
+      if (initialState) {
+        verificationRegistry.set(uploadId, {
+          uploadId,
+          docType,
+          stages: initialState.stages as any,
+          overallStatus: 'in_progress',
+          verifiedAt: null,
+        });
+      }
 
       res.status(201).json({
         data: {
@@ -514,14 +522,15 @@ router.get(
           completedAt: stored.createdAt,
         }));
 
+        const status = (stored as any).overallStatus || 'in_progress';
         res.status(200).json({
           data: {
             uploadId,
             filename: stored.originalName,
             docType: stored.docType,
-            stages,
-            overallStatus: 'verified',
-            verifiedAt: stored.createdAt,
+            stages: (stored as any).stages || stages,
+            overallStatus: status,
+            verifiedAt: status === 'verified' ? stored.createdAt : null,
           },
           error: null,
         });

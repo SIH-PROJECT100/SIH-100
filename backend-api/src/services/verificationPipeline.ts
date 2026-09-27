@@ -20,26 +20,35 @@ export async function startVerificationPipeline(
   bidderId: string,
   fileBuffer?: Buffer
 ) {
-  const outcome = getDemoOutcomeForFile(filename) || getDemoOutcomeForFile(docType);
-
   let stages: any[];
   let overallStatus: string;
 
-  if (outcome) {
-    // Known demo-kit file — deterministic, fast, offline-safe. Use as-is.
-    stages = outcome.stages;
-    overallStatus = outcome.overallStatus ?? 'verified';
-  } else {
-    // Run ACTUAL statutory extraction, tamper detection, cross-check, and rules.
+  if (fileBuffer && fileBuffer.length > 0) {
+    // ALWAYS run actual statutory extraction, tamper detection, cross-check, and rules on uploaded content!
     const realRes = await runRealVerificationPipeline(
       uploadId,
       filename,
       docType,
-      fileBuffer || Buffer.from(''),
+      fileBuffer,
       bidderId
     );
     stages = realRes.stages;
     overallStatus = realRes.overallStatus;
+  } else {
+    // Only if fileBuffer is missing/empty, check if it's a known demo fixture
+    const outcome = getDemoOutcomeForFile(filename);
+    if (outcome) {
+      stages = outcome.stages;
+      overallStatus = outcome.overallStatus ?? 'verified';
+    } else {
+      stages = [
+        { stage: 'uploaded', status: 'failed', detail: { error: 'Empty file buffer received' } },
+        { stage: 'ai_extraction', status: 'failed', detail: { error: 'No content to analyze' } },
+        { stage: 'cross_check', status: 'failed', detail: { error: 'Document verification failed' } },
+        { stage: 'portal_verification', status: 'failed', detail: { error: 'Missing document' } },
+      ];
+      overallStatus = 'failed';
+    }
   }
 
   // Initialize state — ONLY first stage marked complete
@@ -73,6 +82,25 @@ export async function startVerificationPipeline(
     if (final) {
       final.overallStatus = overallStatus;
     }
+
+    try {
+      const { verificationRegistry, uploadRegistry, saveRegistry } = await import('../routes/uploads.js');
+      if (final) {
+        verificationRegistry.set(uploadId, {
+          uploadId,
+          docType,
+          stages: final.stages as any,
+          overallStatus: (overallStatus as any) || 'in_progress',
+          verifiedAt: overallStatus === 'verified' ? new Date().toISOString() : null,
+        });
+      }
+      const stored = uploadRegistry.get(uploadId);
+      if (stored) {
+        (stored as any).overallStatus = overallStatus;
+        (stored as any).stages = final?.stages;
+        saveRegistry();
+      }
+    } catch {}
 
     // CRITICAL: also write this to the ledger so Fix 20/21/23 ledger tabs show it.
     await emitLedgerEntriesForPipeline(uploadId, bidderId, stages);

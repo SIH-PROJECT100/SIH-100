@@ -562,23 +562,23 @@ export function getDemoOutcomeForFile(filename: string): DemoPdfOutcome | null {
     if (key.toLowerCase() === lower) return outcome;
   }
 
-  // 4. Exact / Fuzzy / Prefix match for all official demo documents
+  // 4. Exact match against known demo files (e.g. AAWBS9999P, 27AAWBS9999P1Z5, UDYAM-MH-01-00892, sample_tampered)
   if (lower.includes('tamper')) {
     return DEMO_PDF_OUTCOMES['sample_tampered.pdf'];
   }
-  if (lower.includes('pan')) {
+  if (lower.includes('aawbs9999p')) {
     return DEMO_PDF_OUTCOMES['PAN_Card_IncomeTax_AAWBS9999P.pdf'];
   }
-  if (lower.includes('gst')) {
+  if (lower.includes('27aawbs9999p1z5')) {
     return DEMO_PDF_OUTCOMES['GST_Certificate_27AAWBS9999P1Z5.pdf'];
   }
-  if (lower.includes('udyam') || lower.includes('msme')) {
+  if (lower.includes('udyam-mh-01-00892') || lower.includes('00892')) {
     return DEMO_PDF_OUTCOMES['Udyam_Registration_Certificate_UDYAM-MH-01-00892.pdf'];
   }
-  if (lower.includes('itr') || lower.includes('tax_filing') || lower.includes('ay2024') || lower.includes('acknowledgement')) {
+  if (lower.includes('ay2024-25') || lower.includes('itr_v_acknowledgement')) {
     return DEMO_PDF_OUTCOMES['ITR_V_Acknowledgement_AY2024-25.pdf'];
   }
-  if (lower.includes('debarment') || lower.includes('blacklisting') || lower.includes('oem') || lower.includes('declaration') || lower.includes('affidavit')) {
+  if (lower.includes('debarment_non_blacklisting')) {
     return DEMO_PDF_OUTCOMES['Debarment_Non_Blacklisting_Declaration.pdf'];
   }
 
