@@ -142,21 +142,25 @@ async function runAsyncVerificationPipeline(
     const sigResult = await verifyDocumentSignature(buffer, docType);
     record.signatureInfo = sigResult;
 
-    await appendLedgerEntry({
-      bidderId,
-      actorType: 'system',
-      actorId: 'sovereign_ca_verifier',
-      action: 'signature_verification_run',
-      detail: {
-        docType,
-        hasSignature: sigResult.hasSignature,
-        verified: sigResult.verified,
-        trustedCA: sigResult.trustedCA,
-        signerName: sigResult.signerName,
-        signedAt: sigResult.signedAt,
-        message: sigResult.message,
-      },
-    });
+    try {
+      await appendLedgerEntry({
+        bidderId,
+        actorType: 'system',
+        actorId: 'sovereign_ca_verifier',
+        action: 'signature_verification_run',
+        detail: {
+          docType,
+          hasSignature: sigResult.hasSignature,
+          verified: sigResult.verified,
+          trustedCA: sigResult.trustedCA,
+          signerName: sigResult.signerName,
+          signedAt: sigResult.signedAt,
+          message: sigResult.message,
+        },
+      });
+    } catch (ledgerErr: any) {
+      console.warn('[Uploads] Warning: Signature verification ledger append failed:', ledgerErr?.message || ledgerErr);
+    }
 
     updateStage(
       'signature_verification',

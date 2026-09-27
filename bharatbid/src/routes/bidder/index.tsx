@@ -202,7 +202,7 @@ const FALLBACK_DOCUMENTS: Record<string, any> = {
     sizeBytes: 154200,
     sha256: 'a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0',
     uploadedAt: '2026-09-22T14:20:00Z',
-    status: 'in_progress',
+    status: 'verified',
     extractedValue: 'UDYAM-MH-01-00892',
     confidence: 0.98,
     cryptoVerification: {

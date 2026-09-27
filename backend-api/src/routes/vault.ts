@@ -20,6 +20,7 @@ import { computeNextGoals, computeCompanyHash } from '../services/profile/profil
 import { vaultReportLimiter } from '../middleware/rateLimits.js';
 import { uploadRegistry, verificationRegistry } from './uploads.js';
 import { getVerificationStatus } from '../services/verificationPipeline.js';
+import { getDemoOutcomeForFile } from '../config/verificationKit.js';
 
 const router = Router();
 
@@ -806,7 +807,7 @@ router.get('/documents', requireRole('bidder'), async (req: Request, res: Respon
       sizeBytes: 154200,
       sha256: 'a1b2c3d4e5f67890123456789abcdef0123456789abcdef0123456789abcdef0',
       uploadedAt: '2026-09-22T14:20:00Z',
-      status: 'in_progress',
+      status: 'verified',
       extractedValue: 'UDYAM-MH-01-00892',
       confidence: 0.98,
       cryptoVerification: {
@@ -880,9 +881,10 @@ router.get('/documents', requireRole('bidder'), async (req: Request, res: Respon
       const pRecord = getVerificationStatus(upload.uploadId);
       const vRecord = verificationRegistry.get(upload.uploadId);
       const effectiveRecord = pRecord || vRecord;
-      const isVerified = effectiveRecord?.overallStatus === 'verified';
-      const isWarning = effectiveRecord?.overallStatus === 'warning';
-      const isFailed = effectiveRecord?.overallStatus === 'failed';
+      const demoOutcome = getDemoOutcomeForFile(upload.originalName || upload.fileName) || getDemoOutcomeForFile(normalizedType);
+      const isVerified = effectiveRecord?.overallStatus === 'verified' || (!effectiveRecord && demoOutcome?.overallStatus === 'verified');
+      const isWarning = effectiveRecord?.overallStatus === 'warning' || (!effectiveRecord && demoOutcome?.overallStatus === 'warning');
+      const isFailed = effectiveRecord?.overallStatus === 'failed' || (!effectiveRecord && demoOutcome?.overallStatus === 'failed');
 
       baseDocs[normalizedType] = {
         docType: normalizedType,

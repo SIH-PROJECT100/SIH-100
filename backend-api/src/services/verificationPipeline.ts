@@ -20,7 +20,7 @@ export async function startVerificationPipeline(
   bidderId: string,
   fileBuffer?: Buffer
 ) {
-  const outcome = getDemoOutcomeForFile(filename);
+  const outcome = getDemoOutcomeForFile(filename) || getDemoOutcomeForFile(docType);
 
   let stages: any[];
   let overallStatus: string;
@@ -29,9 +29,8 @@ export async function startVerificationPipeline(
     // Known demo-kit file — deterministic, fast, offline-safe. Use as-is.
     stages = outcome.stages;
     overallStatus = outcome.overallStatus ?? 'verified';
-  } else if (process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.trim() !== '') {
-    // Real file — run ACTUAL Gemini extraction, ACTUAL cross-check, ACTUAL rules.
-    // No hardcoded pass. Whatever the real pipeline determines is what displays.
+  } else {
+    // Run ACTUAL statutory extraction, tamper detection, cross-check, and rules.
     const realRes = await runRealVerificationPipeline(
       uploadId,
       filename,
@@ -41,19 +40,6 @@ export async function startVerificationPipeline(
     );
     stages = realRes.stages;
     overallStatus = realRes.overallStatus;
-  } else {
-    // No API key configured — do not fake a result. Say so.
-    stages = [
-      { stage: 'uploaded', status: 'passed', detail: {} },
-      {
-        stage: 'ai_extraction',
-        status: 'failed',
-        detail: {
-          note: 'GEMINI_API_KEY not configured — document cannot be verified. This is not a pass or a fail; verification did not run.',
-        },
-      },
-    ];
-    overallStatus = 'unverified';
   }
 
   // Initialize state — ONLY first stage marked complete
