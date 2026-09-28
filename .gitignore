@@ -59,3 +59,4 @@ BACKEND_BUILD_PLAYBOOK*.md
 # Do not ignore src/docs
 !backend-api/src/docs/
 !backend-api/src/docs/**
+!bharatbid/.env.production
