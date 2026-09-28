@@ -113,6 +113,7 @@ jobs:
         working-directory: ./backend-api
         env:
           NODE_ENV: test
+          PORT: 4000
           DATABASE_URL: "postgresql://backend_app:backend_app_secure_password_2026@localhost:5432/gem_compliance?schema=public"
           DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=public"
           JWT_SECRET: "super_secure_jwt_secret_key_for_gem_compliance_2026"
