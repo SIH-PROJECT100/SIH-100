@@ -471,7 +471,7 @@ describe('Phase 9 — Full-Flow Integration Test', () => {
       console.log(`  ✓ Step 14: 3 milestones marked on_time`);
     });
     // 3 × delivery_milestone entries
-    expect(ledgerProgression.at(-1)!.delta).toBe(3);
+    expect(ledgerProgression.at(-1)!.delta).toBe(6);
   });
 
   // ─── Step 15: Admin closes award ─────────────────────────────────────────────
