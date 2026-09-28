@@ -17,13 +17,51 @@ describe('Phase 3: Two-Officer Sequential Approval & Anti-Anchoring (Feature 4)'
 
   beforeAll(async () => {
     const freshExpiry = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
-    const existingBidder = await prisma.bidder.findUnique({ where: { id: testBidderId } });
-    const checks = ((existingBidder?.checks as any[]) || []).map((c: any) => ({
+
+    // Ensure test tender exists
+    let tender = await prisma.tender.findUnique({ where: { id: testTenderId } });
+    if (!tender) {
+      await prisma.tender.create({
+        data: {
+          id: testTenderId,
+          gemTenderId: `GEM-TEST-${testTenderId}`,
+          title: 'Test Tender for Phase 3',
+          status: 'evaluation',
+          applicationFee: 5000,
+        },
+      });
+    } else {
+      await prisma.tender.update({
+        where: { id: testTenderId },
+        data: { status: 'evaluation' },
+      });
+    }
+
+    // Ensure test bidder exists
+    let bidder = await prisma.bidder.findUnique({ where: { id: testBidderId } });
+    if (!bidder) {
+      bidder = await prisma.bidder.create({
+        data: {
+          id: testBidderId,
+          tenderId: testTenderId,
+          companyName: 'Test Bidder for Phase 3',
+          pan: 'AAATT0000A',
+          gstin: '18AATCS0000A1Z5',
+          overallRisk: 'low',
+          riskScore: 0.1,
+          quotedPrice: 100000,
+          submissionIp: '127.0.0.1',
+          approvalState: 'pending',
+          checks: [],
+        },
+      });
+    }
+
+    const checks = ((bidder.checks as any[]) || []).map((c: any) => ({
       ...c,
       verificationExpiresAt: freshExpiry,
     }));
 
-    // Reset test bidder to clean pending state with fresh verification checks
     await prisma.bidder.update({
       where: { id: testBidderId },
       data: {
@@ -37,17 +75,10 @@ describe('Phase 3: Two-Officer Sequential Approval & Anti-Anchoring (Feature 4)'
       },
     });
 
-    // Clean up any pre-existing test award decisions on tender-001
     await prisma.awardDecision.deleteMany({
       where: { tenderId: testTenderId },
     });
 
-    await prisma.tender.update({
-      where: { id: testTenderId },
-      data: { status: 'evaluation' },
-    });
-
-    // Ensure application fee is recorded as paid for bidder-005 on tender-001 (Gate 3 requirement)
     await prisma.applicationFeePayment.upsert({
       where: { tenderId_bidderId: { tenderId: testTenderId, bidderId: testBidderId } },
       create: {

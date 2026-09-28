@@ -79,6 +79,7 @@ jobs:
           JWT_SECRET: "super_secure_jwt_secret_key_for_gem_compliance_2026"
           GEMINI_API_KEY: "mock_gemini_api_key_for_ci"
           DEMO_MODE: "true"
+          SEED_LEGACY_BIDDERS: "true"
         run: |
           npm run db:seed
           npx tsx scripts/seed_phase9.ts

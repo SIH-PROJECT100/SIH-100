@@ -27,3 +27,7 @@ export async function deleteLedgerEntriesAdmin(where: Prisma.LedgerEntryWhereInp
   }
 }
 
+
+export async function disconnectAdminPrisma() {
+  await adminPrisma.$disconnect();
+}
