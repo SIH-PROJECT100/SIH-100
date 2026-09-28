@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { API_BASE, getStoredToken } from '@/lib/apiClient';
 
 export function useUploadWithPolling(docType: string, bidderId: string = 'user-bidder-001') {
   const queryClient = useQueryClient();
@@ -33,13 +34,13 @@ export function useUploadWithPolling(docType: string, bidderId: string = 'user-b
       formData.append('docType', docType);
       formData.append('bidderId', bidderId);
 
-      const token = localStorage.getItem('token');
+      const token = getStoredToken();
       const headers: Record<string, string> = {};
       if (token) {
         headers['Authorization'] = `Bearer ${token}`;
       }
 
-      const res = await fetch('/api/uploads', {
+      const res = await fetch(`${API_BASE}/uploads`, {
         method: 'POST',
         headers,
         body: formData,
@@ -78,7 +79,7 @@ export function useUploadWithPolling(docType: string, bidderId: string = 'user-b
     queryKey: ['uploadStatus', activeUploadId],
     queryFn: async () => {
       if (!activeUploadId) return null;
-      const res = await fetch(`/api/uploads/${activeUploadId}/verification-status`);
+      const res = await fetch(`${API_BASE}/uploads/${activeUploadId}/verification-status`);
       if (!res.ok) {
         throw new Error('Failed to fetch verification status');
       }
