@@ -298,12 +298,17 @@ awardsRouter.post(
         // 6. Recompute BidderProfile for the winning bidder
         let profile = null;
         if (award.winningBidder?.pan) {
-          profile = await recomputeBidderProfile(
-            award.winningBidder.pan,
-            award.winningBidder.companyName,
-            award.winningBidderId,
-            tx
-          );
+          try {
+            profile = await recomputeBidderProfile(
+              award.winningBidder.pan,
+              award.winningBidder.companyName,
+              award.winningBidderId,
+              tx
+            );
+          } catch (err) {
+            console.error('[Award Close] Profile recomputation failed:', err);
+            throw err;
+          }
         }
 
         return {
@@ -419,20 +424,11 @@ milestonesRouter.patch(
           tx
         );
 
-        // 3. Immediately recompute winning bidder's profile
-        let profile = null;
-        if (milestone.award.winningBidder?.pan) {
-          profile = await recomputeBidderProfile(
-            milestone.award.winningBidder.pan,
-            milestone.award.winningBidder.companyName,
-            milestone.award.winningBidderId,
-            tx
-          );
-        }
-
+        // 3. Profile recomputation deferred to award close
+        // This avoids duplicate ledger writes and preserves atomicity
         return {
           milestone: updated,
-          profile,
+          profile: null,
         };
       });
 
