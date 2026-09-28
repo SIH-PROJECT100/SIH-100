@@ -5,8 +5,9 @@ RUN apt-get update -y && apt-get install -y openssl ca-certificates && rm -rf /v
 
 WORKDIR /app
 
-# Copy dependency manifests
+# Copy dependency manifests and Prisma schema (required for postinstall prisma generate)
 COPY backend-api/package*.json ./
+COPY backend-api/prisma ./prisma/
 
 # Install dependencies
 RUN npm install
@@ -14,10 +15,9 @@ RUN npm install
 # Copy backend source code
 COPY backend-api/ ./
 
-# Build TypeScript and generate Prisma Client
+# Build TypeScript
 RUN npm run build
 
-# Render supplies PORT dynamically at runtime via process.env.PORT
 EXPOSE 4000
 
 CMD ["node", "dist/index.js"]
