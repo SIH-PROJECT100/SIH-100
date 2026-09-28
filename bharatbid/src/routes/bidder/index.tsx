@@ -1,3 +1,4 @@
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 import { useState, useEffect, useMemo } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link, useNavigate, useParams } from 'react-router-dom'
@@ -1533,7 +1534,7 @@ export default function BidderPortalPage() {
                             View Tender Details
                           </Link>
                           <a
-                            href={`http://localhost:4000/bidder/me/vault/${b.tenderId}/report`}
+                            href={`${API_BASE}/bidder/me/vault/${b.tenderId}/report`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-navy-900 text-cream-50 hover:bg-navy-800 dark:bg-saffron-500 dark:text-navy-950 dark:hover:bg-saffron-400 text-small font-bold shadow-xs"
@@ -1626,7 +1627,7 @@ export default function BidderPortalPage() {
                             View Tender
                           </Link>
                           <a
-                            href={`http://localhost:4000/bidder/me/vault/${b.tenderId}/report`}
+                            href={`${API_BASE}/bidder/me/vault/${b.tenderId}/report`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-small font-semibold shadow-xs"
@@ -1704,7 +1705,7 @@ export default function BidderPortalPage() {
                             View Tender Archive
                           </Link>
                           <a
-                            href={`http://localhost:4000/bidder/me/vault/${b.tenderId}/report`}
+                            href={`${API_BASE}/bidder/me/vault/${b.tenderId}/report`}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cream-100 hover:bg-cream-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-navy-900 dark:text-slate-200 text-small font-medium border border-line dark:border-slate-700"
@@ -1765,7 +1766,7 @@ export default function BidderPortalPage() {
                         </div>
 
                         <a
-                          href={`http://localhost:4000/bidder/me/vault/${b.tenderId}/report`}
+                          href={`${API_BASE}/bidder/me/vault/${b.tenderId}/report`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cream-100 hover:bg-cream-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-navy-900 dark:text-slate-200 text-small font-semibold border border-line dark:border-slate-700"
