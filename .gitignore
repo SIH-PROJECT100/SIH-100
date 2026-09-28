@@ -49,10 +49,13 @@ scratch/
 backend-api/scratch/
 
 # Omit docs files per instruction
-docs/
+/docs/
 bharatbid/docs/
 backend-api/docs/
-backend-api/src/docs/
 ANTIGRAVITY_*.md
 BACKEND_BUILD_PLAYBOOK*.md
 .pgdata/
+
+# Do not ignore src/docs
+!backend-api/src/docs/
+!backend-api/src/docs/**

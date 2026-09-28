@@ -79,6 +79,7 @@ jobs:
           JWT_SECRET: "super_secure_jwt_secret_key_for_gem_compliance_2026"
           GEMINI_API_KEY: "mock_gemini_api_key_for_ci"
           DEMO_MODE: "true"
+          SEED_LEGACY_BIDDERS: "true"
         run: |
           npm run db:seed
           npx tsx scripts/seed_phase9.ts
@@ -113,6 +114,7 @@ jobs:
         working-directory: ./backend-api
         env:
           NODE_ENV: test
+          PORT: 4000
           DATABASE_URL: "postgresql://backend_app:backend_app_secure_password_2026@localhost:5432/gem_compliance?schema=public"
           DIRECT_URL: "postgresql://postgres:postgres@localhost:5432/gem_compliance?schema=public"
           JWT_SECRET: "super_secure_jwt_secret_key_for_gem_compliance_2026"

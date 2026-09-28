@@ -25,16 +25,32 @@ const app = express();
 
 // ─── Security middleware ───────────────────────────────────────────────────────
 app.use(helmet());
-const allowedOrigins = [config.CORS_ORIGIN, 'http://localhost:3000', 'http://localhost:5173', 'http://127.0.0.1:3000', 'http://127.0.0.1:5173'];
+const allowedOrigins = [
+  config.CORS_ORIGIN,
+  'http://localhost:4000',
+  'http://localhost:3000',
+  'http://localhost:5173',
+  'http://127.0.0.1:4000',
+  'http://127.0.0.1:3000',
+  'http://127.0.0.1:5173',
+];
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, server-to-server) or matched origin
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.some((o) => origin.startsWith(o))) {
-        callback(null, true);
-      } else {
-        callback(null, false);
+      // Allow requests with no origin (like mobile apps, curl, server-to-server)
+      if (!origin) return callback(null, true);
+
+      // Allow wildcard, matching origin, or any Vercel preview/production deployment
+      if (
+        config.CORS_ORIGIN === '*' ||
+        allowedOrigins.includes(origin) ||
+        allowedOrigins.some((o) => o && origin.startsWith(o)) ||
+        origin.endsWith('.vercel.app')
+      ) {
+        return callback(null, true);
       }
+
+      callback(null, false);
     },
     credentials: true,
   })
@@ -95,7 +111,7 @@ app.use(errorHandler);
 // ─── Boot ─────────────────────────────────────────────────────────────────────
 async function startServer() {
   await connectDatabase();
-  app.listen(config.PORT, () => {
+  app.listen(config.PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${config.PORT}`);
   });
 }

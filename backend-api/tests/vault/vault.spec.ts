@@ -117,15 +117,29 @@ describe('Phase 5: Vault + Trust Profile', () => {
 
   afterAll(async () => {
     // Clean up bidder profiles
-    await adminPrisma.$executeRawUnsafe(
-      `DELETE FROM bidder_profiles WHERE bidder_company_id = '${COMPANY_HASH}'`
-    );
-    await deleteLedgerEntriesAdmin({ bidderId: vaultBidderId });
-    await deleteLedgerEntriesAdmin({ bidderId: otherBidderId });
-    await prisma.bidder.delete({ where: { id: vaultBidderId } });
-    await prisma.bidder.delete({ where: { id: otherBidderId } });
-    await prisma.tender.delete({ where: { id: vaultTenderId } });
-    await prisma.tender.delete({ where: { id: otherTenderId } });
+    try {
+      await adminPrisma.$executeRawUnsafe(
+        `DELETE FROM bidder_profiles WHERE bidder_company_id = '${COMPANY_HASH}'`
+      );
+    } catch {}
+    try {
+      await deleteLedgerEntriesAdmin({ bidderId: vaultBidderId });
+    } catch {}
+    try {
+      await deleteLedgerEntriesAdmin({ bidderId: otherBidderId });
+    } catch {}
+    try {
+      await adminPrisma.bidder.delete({ where: { id: vaultBidderId } });
+    } catch {}
+    try {
+      await adminPrisma.bidder.delete({ where: { id: otherBidderId } });
+    } catch {}
+    try {
+      await adminPrisma.tender.delete({ where: { id: vaultTenderId } });
+    } catch {}
+    try {
+      await adminPrisma.tender.delete({ where: { id: otherTenderId } });
+    } catch {}
   });
 
   // ── 1. Role guard — officer cannot access /bidder/me/vault ───────────────────

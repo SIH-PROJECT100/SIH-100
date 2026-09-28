@@ -13,7 +13,7 @@ const envSchema = z.object({
   GEMINI_MODEL_REASONING: z.string().default('gemini-2.5-pro'),
   OCR_FALLBACK_MODE: z.enum(['tesseract', 'paddle']).default('tesseract'),
   PADDLE_OCR_URL: z.string().default('http://localhost:8001'),
-  CORS_ORIGIN: z.string().default('http://localhost:5173'),
+  CORS_ORIGIN: z.string().default('http://localhost:4000'),
   DIGILOCKER_MODE: z.enum(['mock', 'sandbox', 'production']).default('mock'),
   DIGILOCKER_MOCK_ROOT_CERT_PATH: z.string().default('./demo/mock-cca-root.pem'),
   VERIFICATION_TIMEOUT_MS: z.coerce.number().default(10000),

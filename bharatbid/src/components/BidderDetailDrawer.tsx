@@ -1,3 +1,4 @@
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
@@ -532,7 +533,7 @@ export function BidderDetailDrawer({
                               </div>
 
                               <a
-                                href={`http://localhost:4000${doc.url}`}
+                                href={`${API_BASE}${doc.url}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1 px-2.5 py-1 text-micro font-medium text-navy-900 bg-cream-100 hover:bg-cream-200 border border-line rounded transition-colors"
@@ -652,7 +653,7 @@ export function BidderDetailDrawer({
                             <div className="mt-2.5 flex items-center justify-between bg-cream-50 p-2 rounded border border-line/60">
                               <span className="text-micro text-ink-600">Attached File:</span>
                               <a
-                                href={`http://localhost:4000${check.fileUrl || `/uploads/${check.uploadId}`}`}
+                                href={`${API_BASE}${check.fileUrl || `/uploads/${check.uploadId}`}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="inline-flex items-center gap-1.5 px-2.5 py-1 text-micro font-medium bg-navy-900 text-paper rounded hover:bg-navy-800 transition-colors shadow-sm"

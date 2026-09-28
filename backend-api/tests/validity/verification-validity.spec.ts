@@ -109,8 +109,33 @@ describe("Phase 4: Validity — Integration", () => {
 
   beforeAll(async () => {
     testStartTime = new Date();
-    await deleteLedgerEntriesAdmin({ bidderId: testBidderId, action: "verification_expiry_notice" });
-    // Set fresh checks so reverify starts from a known state
+    try {
+      await deleteLedgerEntriesAdmin({ bidderId: testBidderId, action: "verification_expiry_notice" });
+    } catch {}
+
+    // Ensure bidder exists
+    let bidder = await prisma.bidder.findUnique({ where: { id: testBidderId } });
+    if (!bidder) {
+      // Ensure tender exists first
+      const t = await prisma.tender.findFirst();
+      const tid = t?.id || 'tender-001';
+      bidder = await prisma.bidder.create({
+        data: {
+          id: testBidderId,
+          tenderId: tid,
+          companyName: 'Test Bidder for Phase 4',
+          pan: 'AAATT0001B',
+          gstin: '18AATCS0001B1Z5',
+          overallRisk: 'low',
+          riskScore: 0.1,
+          quotedPrice: 100000,
+          submissionIp: '127.0.0.1',
+          approvalState: 'pending',
+          checks: [],
+        },
+      });
+    }
+
     await prisma.bidder.update({
       where: { id: testBidderId },
       data: {

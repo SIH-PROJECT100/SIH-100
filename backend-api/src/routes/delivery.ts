@@ -273,7 +273,23 @@ awardsRouter.post(
         const missedCount = updatedMilestones.filter((m) => m.status === 'missed').length;
         const remainingPending = updatedMilestones.filter((m) => m.status === 'pending').length;
 
-        // 5. Append award_closed ledger entry
+        // 5. Recompute BidderProfile FIRST (appends any badge_awarded entries before closing)
+        let profile = null;
+        if (award.winningBidder?.pan) {
+          try {
+            profile = await recomputeBidderProfile(
+              award.winningBidder.pan,
+              award.winningBidder.companyName,
+              award.winningBidderId,
+              tx
+            );
+          } catch (err) {
+            console.error('[Award Close] Profile recomputation failed:', err);
+            throw err;
+          }
+        }
+
+        // 6. Append award_closed ledger entry LAST (ensures award_closed is the terminal entry)
         await appendToLedger(
           {
             bidderId: award.winningBidderId,
@@ -294,17 +310,6 @@ awardsRouter.post(
           },
           tx
         );
-
-        // 6. Recompute BidderProfile for the winning bidder
-        let profile = null;
-        if (award.winningBidder?.pan) {
-          profile = await recomputeBidderProfile(
-            award.winningBidder.pan,
-            award.winningBidder.companyName,
-            award.winningBidderId,
-            tx
-          );
-        }
 
         return {
           awardId: award.id,
@@ -419,15 +424,20 @@ milestonesRouter.patch(
           tx
         );
 
-        // 3. Immediately recompute winning bidder's profile
+        // 3. Recompute winning bidder's profile immediately
         let profile = null;
         if (milestone.award.winningBidder?.pan) {
-          profile = await recomputeBidderProfile(
-            milestone.award.winningBidder.pan,
-            milestone.award.winningBidder.companyName,
-            milestone.award.winningBidderId,
-            tx
-          );
+          try {
+            profile = await recomputeBidderProfile(
+              milestone.award.winningBidder.pan,
+              milestone.award.winningBidder.companyName,
+              milestone.award.winningBidderId,
+              tx
+            );
+          } catch (err) {
+            console.error('[Milestone Complete] Profile recomputation failed:', err);
+            throw err;
+          }
         }
 
         return {

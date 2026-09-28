@@ -6,11 +6,12 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/index.js",
     "test": "vitest run",
     "db:seed": "tsx src/db/seed.ts",
-    "verify:demo": "tsx scripts/verify-demo-state.ts"
+    "verify:demo": "tsx scripts/verify-demo-state.ts",
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@google/genai": "^2.23.0",

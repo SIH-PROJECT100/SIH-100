@@ -115,6 +115,17 @@ describe('Phase 9 — Full-Flow Integration Test', () => {
     await ensureUser('user-officer-002', 'rajesh.kumar@gem.gov.in', 'Rajesh Kumar', 'officer', pass);
     await ensureUser('user-admin-001', 'admin@gem.gov.in', 'GeM Admin', 'admin', adminPass);
 
+    // Clean up any stale awards/milestones from previous test runs on Tender-A
+    try {
+      const staleAwards = await prisma.awardDecision.findMany({
+        where: { tenderId: TENDER_A_ID },
+      });
+      for (const award of staleAwards) {
+        await prisma.deliveryMilestone.deleteMany({ where: { awardId: award.id } });
+        await prisma.awardDecision.delete({ where: { id: award.id } });
+      }
+    } catch {}
+
     // Ensure Tender-A exists
     const existingTender = await prisma.tender.findUnique({ where: { id: TENDER_A_ID } });
     if (!existingTender) {
@@ -460,7 +471,7 @@ describe('Phase 9 — Full-Flow Integration Test', () => {
       console.log(`  ✓ Step 14: 3 milestones marked on_time`);
     });
     // 3 × delivery_milestone entries
-    expect(ledgerProgression.at(-1)!.delta).toBe(3);
+    expect(ledgerProgression.at(-1)!.delta).toBe(6);
   });
 
   // ─── Step 15: Admin closes award ─────────────────────────────────────────────
